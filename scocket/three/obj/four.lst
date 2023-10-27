@@ -1,0 +1,165 @@
+Microsoft (R) Macro Assembler Version 6.11		    10/22/23 16:51:27
+four.asm						     Page 1 - 1
+
+
+				.Model small
+				.486
+
+ = 0270				t0 equ 270h
+ = 0273				tkz equ 273h
+
+ = 0200				PA_8255 equ 200h
+ = 0202				PC_8255 equ 202h
+ = 0203				CTR_8255 equ 203h
+ = 00FF				FLAG equ 0FFh
+ = 0024				GREEN_NS equ 24h
+ = 0081				GREEN_EW equ 81h
+ 0000				data segment	
+ 0000 24 44 04 44 04 44			states db 24h,44h,04h,44h,04h,44h,04h
+       04
+ 0007  81 82 80 82 80 82			   db 81h,82h,80h,82h,80h,82h,80h
+       80
+ 000E  FF					   db 0ffh
+ 000F				data ends
+
+ 0000				code segment
+					assume cs:code,ds:data
+ 0000				start:
+ 0000  BA 0273				mov dx, tkz
+four.asm(22): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  B0 36				mov al, 00110110b
+ 0005  EE				out dx, al
+ 0006  BA 0270				mov dx, t0
+ 0009  B8 0064				mov ax, 100
+ 000C  EE				out dx, al
+ 000D  8A C4				mov al, ah
+ 000F  EE				out dx, al
+					
+					
+ 0010  B8 ---- R			mov ax,data
+ 0013  8E D8				mov ds,ax
+ 0015  E8 0051				call init8255
+ 0018				again:
+ 0018  BE 0000				mov si,0
+ 001B				nextstate:
+ 001B  8A 84 0000 R			mov al,states[si]
+ 001F  3C FF				cmp al,FLAG
+ 0021  74 F5				jz again
+ 0023  BA 0200				mov dx,PA_8255
+ 0026  EE				out dx,al
+ 0027  46				inc si
+ 0028  3C 24				cmp al,GREEN_NS
+ 002A  74 09				jz longDelay
+ 002C  3C 81				cmp al,GREEN_EW
+ 002E  74 05				jz longDelay
+ 0030  E8 0017				call delay1s
+ 0033  EB 03				jmp next
+ 0035				longDelay:
+ 0035  E8 0012				call delay1s
+ 0038				next: 
+ 0038  74 E1				jz nextstate
+ 003A  F4				hlt
+					
+ 003B				delay10s proc
+ 003B  BB 03E8				mov bx, 1000
+ 003E  E8 0018				call setTimer ; T0 -->> mode = 0, init cnt = 1000  <<-- 100Hz
+ 0041				again_10s:
+ 0041  BA 0202				mov dx, PC_8255
+ 0044  EC				in al, dx
+ 0045  A8 01				test al, 1
+ 0047  74 F8				jz again_10s
+ 0049  C3				ret
+ 004A				delay10s endp
+
+ 004A				delay1s proc
+ 004A  BB 0064				mov bx, 100
+ 004D  E8 0009				call setTimer ; T0 -->> mode = 0, init cnt = 100  <<-- 100Hz
+ 0050				again_1s:
+ 0050  BA 0202				mov dx, PC_8255
+ 0053  EC				in al, dx
+ 0054  A8 01				test al, 1
+ 0056  74 F8				jz again_1s
+ 0058  C3				ret
+ 0059				delay1s endp
+
+ 0059				setTimer proc
+ 0059  BA 0273				mov dx, tkz
+ 005C  B0 30				mov al, 00110000b
+ 005E  EE				out dx, al
+ 005F  8B C3				mov ax, bx
+ 0061  BA 0270				mov dx, t0
+ 0064  EE				out dx, al
+ 0065  8A C4				mov al, ah
+ 0067  EE				out dx, al
+ 0068  C3				ret
+ 0069				setTimer endp
+
+ 0069				init8255 proc
+ 0069  BA 0203				mov dx,CTR_8255
+ 006C  B0 81				mov al,10000001B
+ 006E  EE				out dx,al
+ 006F  C3				ret
+ 0070				init8255 endp
+
+ 0070				code ends
+
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    10/22/23 16:51:27
+four.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 0070	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 000F	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+delay10s . . . . . . . . . . . .	P Near	 003B	  code	Length= 000F Private
+delay1s  . . . . . . . . . . . .	P Near	 004A	  code	Length= 000F Private
+init8255 . . . . . . . . . . . .	P Near	 0069	  code	Length= 0007 Private
+setTimer . . . . . . . . . . . .	P Near	 0059	  code	Length= 0010 Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+CTR_8255 . . . . . . . . . . . .	Number	 0203h	 
+FLAG . . . . . . . . . . . . . .	Number	 00FFh	 
+GREEN_EW . . . . . . . . . . . .	Number	 0081h	 
+GREEN_NS . . . . . . . . . . . .	Number	 0024h	 
+PA_8255  . . . . . . . . . . . .	Number	 0200h	 
+PC_8255  . . . . . . . . . . . .	Number	 0202h	 
+again_10s  . . . . . . . . . . .	L Near	 0041	  code	
+again_1s . . . . . . . . . . . .	L Near	 0050	  code	
+again  . . . . . . . . . . . . .	L Near	 0018	  code	
+longDelay  . . . . . . . . . . .	L Near	 0035	  code	
+nextstate  . . . . . . . . . . .	L Near	 001B	  code	
+next . . . . . . . . . . . . . .	L Near	 0038	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+states . . . . . . . . . . . . .	Byte	 0000	  data	
+t0 . . . . . . . . . . . . . . .	Number	 0270h	 
+tkz  . . . . . . . . . . . . . .	Number	 0273h	 
+
+	   1 Warnings
+	   0 Errors

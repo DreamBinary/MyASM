@@ -1,0 +1,27 @@
+LINK : warning L4021: no stack segment
+
+ Start  Stop   Length Name                   Class
+ 00000H 00000H 00000H _TEXT                  CODE
+ 00000H 00000H 00000H _DATA                  DATA
+ 00000H 00000H 00001H DATA                   
+ 00010H 0003FH 00030H CODE                   
+
+ Origin   Group
+ 0000:0   DGROUP
+
+  Address         Publics by Name
+
+
+  Address         Publics by Value
+
+
+Line numbers for ..\obj\switch.obj(switch.asm) segment CODE
+
+    23 0001:0000    24 0001:0003    25 0001:0005    27 0001:0008
+    29 0001:000b    30 0001:000e    31 0001:0011    34 0001:0013
+    35 0001:0016    36 0001:0018    37 0001:0019    41 0001:001a
+    42 0001:001d    43 0001:001e    44 0001:0021    48 0001:0022
+    49 0001:0025    50 0001:0028    51 0001:0029    55 0001:002a
+    57 0001:002d    58 0001:002f
+
+Program entry point at 0001:0000

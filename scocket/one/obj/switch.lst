@@ -1,0 +1,122 @@
+Microsoft (R) Macro Assembler Version 6.11		    09/24/23 14:51:32
+switch.asm						     Page 1 - 1
+
+
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				;Author:	
+				;comment:	Hello, World
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+				.Model small
+				.486
+
+ = 0210				IO_8255 equ 0210H
+ = IO_8255			PA_8255 equ IO_8255
+ = 0211				PB_8255 equ IO_8255+1
+ = 0212				PC_8255 equ IO_8255+2
+ = 0213				KZ_8255 equ IO_8255+3
+
+
+ 0000				data segment ;数据段定义开始
+ 0000 00				kstate db ?
+ 0001				data ends ;数据段定义结束   
+				              
+				                                               
+ 0000				code segment                            ;代码段定义结束  
+					assume CS:code,DS:data
+ 0000				start:       
+ 0000  B8 ---- R			MOV ax,data
+switch.asm(23): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8			    MOV ds,ax                    ;设置数据段的开始地址
+ 0005  E8 000B			    call init8255
+ 0008				re:         
+ 0008  E8 000F				call readPA
+					
+ 000B  E8 0014				call writePB
+ 000E  E8 0019				call delay
+ 0011  EB F5				jmp re
+
+ 0013				init8255 proc
+ 0013  BA 0213				mov dx, KZ_8255
+ 0016  B0 90				mov al, 10010000B;
+ 0018  EE				out dx, al
+ 0019  C3				ret
+ 001A				init8255 endp
+
+ 001A				readPA proc
+ 001A  BA 0210				mov dx, PA_8255
+ 001D  EC				in al, dx
+ 001E  A2 0000 R			mov kstate, al
+ 0021  C3				ret
+ 0022				readPA endp
+
+ 0022				writePB proc
+ 0022  A0 0000 R			mov al, kstate
+ 0025  BA 0211				mov dx, PB_8255
+ 0028  EE				out dx, al
+ 0029  C3				ret
+ 002A				writePB endp
+
+ 002A				delay proc
+ 002A  B9 00FF				mov cx, 00ffh
+ 002D				next: 
+ 002D  E2 FE				loop next
+ 002F  C3				ret
+ 0030				delay endp
+
+ 0030				code ends
+				end start
+
+
+				;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Microsoft (R) Macro Assembler Version 6.11		    09/24/23 14:51:32
+switch.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 0030	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 0001	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+delay  . . . . . . . . . . . . .	P Near	 002A	  code	Length= 0006 Private
+init8255 . . . . . . . . . . . .	P Near	 0013	  code	Length= 0007 Private
+readPA . . . . . . . . . . . . .	P Near	 001A	  code	Length= 0008 Private
+writePB  . . . . . . . . . . . .	P Near	 0022	  code	Length= 0008 Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+IO_8255  . . . . . . . . . . . .	Number	 0210h	 
+KZ_8255  . . . . . . . . . . . .	Number	 0213h	 
+PA_8255  . . . . . . . . . . . .	Text   	 IO_8255
+PB_8255  . . . . . . . . . . . .	Number	 0211h	 
+PC_8255  . . . . . . . . . . . .	Number	 0212h	 
+kstate . . . . . . . . . . . . .	Byte	 0000	  data	
+next . . . . . . . . . . . . . .	L Near	 002D	  code	
+re . . . . . . . . . . . . . . .	L Near	 0008	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+
+	   1 Warnings
+	   0 Errors

@@ -1,0 +1,177 @@
+Microsoft (R) Macro Assembler Version 6.11		    10/15/23 15:33:41
+3.asm							     Page 1 - 1
+
+
+				.model small
+				.486
+ = 0200				pa_8255 EQU 0200H
+ = 0201				pb_8255 EQU 0201H
+ = 0202				pc_8255 EQU 0202H
+ = 0203				ctr_8255 EQU 0203H
+ = 00FF				FLAG EQU 0ffh
+
+ = 0024				GREEN_NS EQU 024h
+ = 0081				GREEN_WE EQU 081h
+
+ 0000				datas	segment
+
+ 0000 24 44 04 44 04 44		states  db 24h, 44h, 04h, 44h, 04h, 44h, 04h ; 六个灯可能
+       04
+ 0007  81 82 80 82 80 82	        db 81h, 82h, 80h, 82h, 80h, 82h, 80h ; 的状态数据
+       80
+ 000E  FF			        db 0ffh    ; 一轮结束标志
+ 000F 3F 06 5B 4F 66 6D		digits	db 3fh,06h,5BH,4fh,66h,6dh,7dh,07h,7fh,67h
+       7D 07 7F 67
+ 0019  77 7C 39 5E 79 71			db 77h,7ch,39h,5eh,79h,71h
+						
+ 001F				datas	ends
+
+ 0000				codes	segment
+						assume cs:codes,ds:datas
+ 0000				start:
+ 0000  B8 ---- R				mov ax,datas
+3.asm(25): warning A4012: line number information for segment without class 'CODE' : codes
+ 0003  8E D8					mov ds,ax
+ 0005  E8 0025					CALL Init_8255 ;初始化8255
+ 0008				again:	
+ 0008  BE 0000					mov si,0
+ 000B				next:
+ 000B  8A 84 0000 R				mov al,states[si]
+ 000F  3C FF					cmp al,FLAG
+						
+ 0011  74 F5					jz again 
+						
+ 0013  BA 0200					mov dx, pa_8255
+ 0016  EE				    out dx, al     ;输出相应的状态
+ 0017  46				    inc si
+					    
+ 0018  3C 24				    cmp al,GREEN_NS
+ 001A  74 09				    jz call1
+
+ 001C  3C 81					cmp al,GREEN_WE
+ 001E  74 05					jz call1
+						
+					
+ 0020  E8 0011					call delay1
+ 0023  EB E6					jmp next
+ 0025				call1:
+ 0025  E8 0019					call delay30
+ 0028  E8 0009					call delay1
+ 002B  EB DE					jmp next
+						
+ 002D				Init_8255 PROC
+ 002D  BA 0203			   		MOV DX,ctr_8255 ;8255方式字控制字控制；10011000
+ 0030  B0 81			    	MOV AL,10000001b ;A口方式0 输出,B口方式 C口下半口输入,
+ 0032  EE			    	OUT DX,AL
+ 0033  C3			    	RET
+ 0034				Init_8255 ENDP
+
+ 0034				delay1 proc
+					
+ 0034  E8 0025				call wait4high
+ 0037  E8 002B				call wait4low
+ 003A  B0 00				mov al,00h
+ 003C  BA 0201				mov dx,pb_8255
+ 003F  EE				out dx,al
+ 0040  C3				ret
+ 0041				delay1 endp
+
+ 0041				delay30 proc
+ 0041  51					push cx
+						
+ 0042  B9 0005					mov cx,5
+ 0045				x1:		
+ 0045  BB 000F R				mov bx,offset digits
+ 0048  B5 00					mov ch,0
+ 004A  03 D9					add bx,cx
+ 004C  8A 07					mov al,[bx]
+ 004E  BA 0201					mov dx,pb_8255
+ 0051  EE					out dx,al
+ 0052  E8 0007					call wait4high
+ 0055  E8 000D					call wait4low
+ 0058  E2 EB					loop x1
+						
+ 005A  59					pop cx
+ 005B  C3					ret
+ 005C				delay30 endp
+
+ 005C				wait4high proc
+ 005C				nexth:
+ 005C  BA 0202					mov dx,pc_8255
+ 005F  EC					in al,dx
+ 0060  A8 01					test al,01h
+ 0062  74 F8					jz nexth
+ 0064  C3					ret
+ 0065				wait4high endp
+
+ 0065				wait4low proc
+ 0065				nextl:
+ 0065  BA 0202					mov dx,pc_8255
+ 0068  EC					in al,dx
+ 0069  A8 01					test al,01h
+ 006B  75 F8					jnz nextl
+ 006D  C3					ret
+ 006E				wait4low endp
+
+ 006E				codes	ends
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    10/15/23 15:33:41
+3.asm							     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+codes  . . . . . . . . . . . . .	16 Bit	 006E	  Para	  Private 
+datas  . . . . . . . . . . . . .	16 Bit	 001F	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+Init_8255  . . . . . . . . . . .	P Near	 002D	  codes	Length= 0007 Private
+delay1 . . . . . . . . . . . . .	P Near	 0034	  codes	Length= 000D Private
+delay30  . . . . . . . . . . . .	P Near	 0041	  codes	Length= 001B Private
+wait4high  . . . . . . . . . . .	P Near	 005C	  codes	Length= 0009 Private
+wait4low . . . . . . . . . . . .	P Near	 0065	  codes	Length= 0009 Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+FLAG . . . . . . . . . . . . . .	Number	 00FFh	 
+GREEN_NS . . . . . . . . . . . .	Number	 0024h	 
+GREEN_WE . . . . . . . . . . . .	Number	 0081h	 
+again  . . . . . . . . . . . . .	L Near	 0008	  codes	
+call1  . . . . . . . . . . . . .	L Near	 0025	  codes	
+ctr_8255 . . . . . . . . . . . .	Number	 0203h	 
+digits . . . . . . . . . . . . .	Byte	 000F	  datas	
+nexth  . . . . . . . . . . . . .	L Near	 005C	  codes	
+nextl  . . . . . . . . . . . . .	L Near	 0065	  codes	
+next . . . . . . . . . . . . . .	L Near	 000B	  codes	
+pa_8255  . . . . . . . . . . . .	Number	 0200h	 
+pb_8255  . . . . . . . . . . . .	Number	 0201h	 
+pc_8255  . . . . . . . . . . . .	Number	 0202h	 
+start  . . . . . . . . . . . . .	L Near	 0000	  codes	
+states . . . . . . . . . . . . .	Byte	 0000	  datas	
+x1 . . . . . . . . . . . . . . .	L Near	 0045	  codes	
+
+	   1 Warnings
+	   0 Errors

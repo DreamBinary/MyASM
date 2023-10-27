@@ -1,0 +1,123 @@
+Microsoft (R) Macro Assembler Version 6.11		    10/26/23 16:18:38
+two.asm							     Page 1 - 1
+
+
+				.model small       
+				.486  ;; 486 ָ�
+
+ = 0270				t0 equ 270h
+ = 0273				tkz equ 273h
+
+ = 0200				addr_0832 equ 200h
+ = 0210				pa_8255 equ 210h
+ = 0212				pc_8255 equ 212h 
+ 0000				data  segment
+ 0000 99 B3 CC E6 F3			nv db 153, 179, 204, 230, 243
+ 0005				data ends
+
+ 0000				code  segment
+				assume cs:code, ds:data
+ 0000				start:	
+ 0000  BA 0273				mov dx, tkz
+two.asm(17): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  B0 36				mov al, 00110110b
+ 0005  EE				out dx, al
+ 0006  BA 0270				mov dx, t0
+ 0009  B8 0064				mov ax, 100
+ 000C  EE				out dx, al
+ 000D  8A C4				mov al, ah
+ 000F  EE				out dx, al
+
+ 0010  B8 ---- R		    mov ax, data  ;; if use data
+ 0013  8E D8			    mov ds, ax
+ 0015				kk:
+ 0015  BE 0000			    mov si, 0
+ 0018				again:
+ 0018  83 FE 05			    cmp si, 5
+ 001B  7D F8			    jge kk
+ 001D  BA 0200			    mov dx, addr_0832
+ 0020  8A 84 0000 R		    mov al, nv[si]
+ 0024  EE			    out dx, al
+ 0025  E8 0004			  	call delay3s
+ 0028  46			  	inc si
+ 0029  EB ED			  	jmp again
+ 002B  F4			  	hlt
+				  	
+ 002C				delay3s proc
+ 002C  BB 012C				mov bx, 300
+ 002F  E8 0009				call setTimer ;; mode = 0
+ 0032				again3s:
+ 0032  BA 0212				mov dx, pc_8255
+ 0035  EC				in al, dx
+ 0036  A8 01				test al, 01h
+ 0038  74 F8				jz again3s
+ 003A  C3				ret
+ 003B				delay3s endp
+				  	
+ 003B				setTimer proc
+ 003B  BA 0273				mov dx, tkz
+ 003E  B0 30				mov al, 00110000b
+ 0040  EE				out dx, al
+ 0041  8B C3				mov ax, bx
+ 0043  BA 0270				mov dx, t0
+ 0046  EE				out dx, al
+ 0047  8A C4				mov al, ah
+ 0049  EE				out dx, al
+ 004A  C3				ret
+ 004B				setTimer endp
+				  	
+ 004B				code ends
+				end start
+				; v = n * 5 / 128 - 5
+				; n = 
+Microsoft (R) Macro Assembler Version 6.11		    10/26/23 16:18:38
+two.asm							     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 004B	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 0005	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+delay3s  . . . . . . . . . . . .	P Near	 002C	  code	Length= 000F Private
+setTimer . . . . . . . . . . . .	P Near	 003B	  code	Length= 0010 Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+addr_0832  . . . . . . . . . . .	Number	 0200h	 
+again3s  . . . . . . . . . . . .	L Near	 0032	  code	
+again  . . . . . . . . . . . . .	L Near	 0018	  code	
+kk . . . . . . . . . . . . . . .	L Near	 0015	  code	
+nv . . . . . . . . . . . . . . .	Byte	 0000	  data	
+pa_8255  . . . . . . . . . . . .	Number	 0210h	 
+pc_8255  . . . . . . . . . . . .	Number	 0212h	 
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+t0 . . . . . . . . . . . . . . .	Number	 0270h	 
+tkz  . . . . . . . . . . . . . .	Number	 0273h	 
+
+	   1 Warnings
+	   0 Errors

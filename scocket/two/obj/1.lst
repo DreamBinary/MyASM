@@ -1,0 +1,206 @@
+Microsoft (R) Macro Assembler Version 6.11		    10/15/23 14:21:52
+1.asm							     Page 1 - 1
+
+
+				.Model small
+				.486
+
+ = 0200				PA_8255 equ 200h
+ = 0201				PB_8255 equ 201h
+ = 0202				PC_8255 equ 202h
+ = 0203				ctr_8255 equ 203h
+
+ 0000				data segment	
+ 0000 3F 06 5B 4F 66 6D		LEDCODE DB 3FH,06H,5BH,4FH,66H,6DH,7DH,07H,7FH,67H
+       7D 07 7F 67
+ 000A  77 7C 39 5E 79 71			DB 77H,7CH,39H,5EH,79H,71H
+ 0010				data ends
+
+ 0000				code segment
+					assume cs:code,ds:data
+ 0000				start:
+ 0000  B8 ---- R			mov ax,data
+1.asm(17): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8				mov ds,ax
+ 0005  E8 0020				call init8255
+ 0008				again:
+ 0008  E8 0024				call readKey
+ 000B  8B D8				mov bx,ax
+ 000D  E8 0033				call delay
+ 0010  E8 001C				call readKey
+ 0013  3B D8				cmp bx,ax
+ 0015  75 F1				jnz again;START
+ 0017  E8 0037				call keyUp
+ 001A  8B C3				mov ax,bx
+ 001C  E8 0042				call getKeyCode
+ 001F  E8 0060				call disp
+ 0022  E8 001E				call delay
+					;call lightLeds;write8255PB
+ 0025  EB E1				jmp again
+ 0027  F4				hlt
+
+
+ 0028				init8255 proc
+ 0028  BA 0203				mov dx,ctr_8255
+ 002B  B0 8A				mov al,10001010B
+ 002D  EE				out dx,al
+ 002E  C3				ret
+ 002F				init8255 endp
+
+ 002F				readKey PROC
+ 002F  B4 FE				mov ah,11111110B
+ 0031  8A C4			scan:	MOV AL,AH
+ 0033  BA 0202					MOV DX,pc_8255
+ 0036  EE					OUT DX,AL
+ 0037  EC					IN AL,DX
+ 0038  0C 0F					OR AL,0FH
+ 003A  3C FF					CMP AL,0FFH
+ 003C  75 04					JNE final
+ 003E  D0 C4					ROL AH,1
+ 0040  EB EF					JMP scan
+ 0042  C3			final:	RET
+ 0043				readKey ENDP
+					
+ 0043				delay proc
+ 0043  51					push cx
+ 0044  B9 001E					mov cx,30
+ 0047					X1:
+ 0047  E8 004A					call wait4High
+ 004A  E8 0050					call wait4Low
+ 004D  E2 F8					LOOP X1
+ 004F  59					POP cx
+ 0050  C3					ret
+ 0051				delay endp
+
+ 0051				keyUp proc 
+ 0051  8A C4			noup:	mov al,ah
+ 0053  BA 0202					mov dx,pc_8255
+ 0056  EE					OUT dx,al
+ 0057  EC					IN 	al,dx
+ 0058  0C 0F					or al,0fh
+ 005A  3C FF					cmp al,0ffh
+ 005C  74 02					je exit
+ 005E  EB F1					jmp noup
+ 0060  C3			exit:	ret
+ 0061				keyUp	endp
+
+ 0061				getKeyCode PROC
+ 0061  F6 D4						NOT AH
+ 0063  F6 D0						NOT AL
+ 0065  B7 00						MOV BH,00H
+ 0067  B3 00						MOV BL,00H
+ 0069  D0 EC			KK:			SHR AH,1
+ 006B  72 05						JC NEXT1
+ 006D  80 C7 01						ADD BH,1H
+ 0070  EB F7						JMP KK
+ 0072  D0 E8			NEXT1:		SHR AL,1
+ 0074  72 05						JC NEXT2
+ 0076  80 C3 04						ADD BL,4
+ 0079  EB F7						JMP NEXT1
+ 007B  02 FB			NEXT2:		ADD BH,BL
+ 007D  8A C7						MOV AL,BH
+ 007F  2C 10						sub al,16
+ 0081  C3			CMPEXIT:	RET
+ 0082				getKeyCode ENDP
+
+ 0082				DISP	proc 
+ 0082  53					push bx
+ 0083  52					push dx
+ 0084  BB 0000 R				mov bx,offset ledcode
+ 0087  B4 00					mov ah,0
+ 0089  03 D8					add bx,ax
+ 008B  8A 07					mov al,[bx]
+ 008D  BA 0200					mov dx,pa_8255
+ 0090  EE					out dx,al
+ 0091  5A					pop dx
+ 0092  5B					pop bx
+ 0093  C3					ret
+ 0094				DISP 	endp
+
+
+ 0094				wait4High proc
+
+ 0094				nextH:
+ 0094  BA 0201				mov dx,pb_8255
+ 0097  EC				in al,dx
+ 0098  A8 01				test al,01h
+ 009A  74 F8				jz nextH
+ 009C  C3				ret
+ 009D				wait4High endp
+
+ 009D				wait4Low proc
+ 009D				nextL:
+ 009D  BA 0201				mov dx,pb_8255
+ 00A0  EC				in al,dx
+ 00A1  A8 01				test al,01h
+ 00A3  75 F8				jnz nextL
+ 00A5  C3				ret
+ 00A6				wait4Low endp
+
+ 00A6				code ends
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    10/15/23 14:21:52
+1.asm							     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 00A6	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 0010	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+DISP . . . . . . . . . . . . . .	P Near	 0082	  code	Length= 0012 Private
+delay  . . . . . . . . . . . . .	P Near	 0043	  code	Length= 000E Private
+getKeyCode . . . . . . . . . . .	P Near	 0061	  code	Length= 0021 Private
+init8255 . . . . . . . . . . . .	P Near	 0028	  code	Length= 0007 Private
+keyUp  . . . . . . . . . . . . .	P Near	 0051	  code	Length= 0010 Private
+readKey  . . . . . . . . . . . .	P Near	 002F	  code	Length= 0014 Private
+wait4High  . . . . . . . . . . .	P Near	 0094	  code	Length= 0009 Private
+wait4Low . . . . . . . . . . . .	P Near	 009D	  code	Length= 0009 Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+CMPEXIT  . . . . . . . . . . . .	L Near	 0081	  code	
+KK . . . . . . . . . . . . . . .	L Near	 0069	  code	
+LEDCODE  . . . . . . . . . . . .	Byte	 0000	  data	
+NEXT1  . . . . . . . . . . . . .	L Near	 0072	  code	
+NEXT2  . . . . . . . . . . . . .	L Near	 007B	  code	
+PA_8255  . . . . . . . . . . . .	Number	 0200h	 
+PB_8255  . . . . . . . . . . . .	Number	 0201h	 
+PC_8255  . . . . . . . . . . . .	Number	 0202h	 
+X1 . . . . . . . . . . . . . . .	L Near	 0047	  code	
+again  . . . . . . . . . . . . .	L Near	 0008	  code	
+ctr_8255 . . . . . . . . . . . .	Number	 0203h	 
+exit . . . . . . . . . . . . . .	L Near	 0060	  code	
+final  . . . . . . . . . . . . .	L Near	 0042	  code	
+nextH  . . . . . . . . . . . . .	L Near	 0094	  code	
+nextL  . . . . . . . . . . . . .	L Near	 009D	  code	
+noup . . . . . . . . . . . . . .	L Near	 0051	  code	
+scan . . . . . . . . . . . . . .	L Near	 0031	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+
+	   1 Warnings
+	   0 Errors

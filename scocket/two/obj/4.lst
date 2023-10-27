@@ -1,0 +1,251 @@
+Microsoft (R) Macro Assembler Version 6.11		    10/15/23 16:36:11
+4.asm							     Page 1 - 1
+
+
+
+				.Model small
+				.486
+
+ = 0200				ROW equ 200h
+ = 0201				RCOW equ 201h
+ = 0202				GCOW equ 202h
+ = 0203				kz_8255 equ 203h
+
+ 0000				data segment	
+ 0000 22 FA 57 FE 53 FA			ZK0 db 22h,0FAh,57h,0feh,53h,0FAh,057h,08Ah
+       57 8A
+ 0008 FF 81 81 81 81 81		    ZK1 db 0FFH,081H,081H,081H,081H,081H,081H,0FFH
+       81 FF
+ 0010 22 22 FF 26 F2 63		    ZK2 db 022H,022H,0FFH,026H,0F2H,063H,062H,092H
+       62 92
+ 0018 08 18 28 7F 1C 2A		    ZK3 db 08H,18H,28H,7FH,1CH,2AH,49H,08H
+       49 08
+ 0020				data ends
+
+ 0000				code segment
+					assume cs:code,ds:data
+ 0000				start:
+ 0000  B8 ---- R			mov ax,data
+4.asm(20): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8				mov ds,ax
+ 0005  E8 008E				call init8255
+ 0008				again:
+ 0008  E8 0092				call cleanDotArray
+ 000B  BF 0202				mov di,GCOW
+ 000E  BE 0000				mov si,0
+ 0011  E8 0098				call displayWord0
+ 0014  BF 0000				mov di,0
+ 0017  BE 0201				mov si,RCOW
+ 001A  E8 008F				call displayWord0
+ 001D  BF 0202				mov di,GCOW
+ 0020  BE 0201				mov si,RCOW
+ 0023  E8 0086				call displayWord0
+ 0026  E8 00ED				call delay 
+ 0029  E8 00EA				call delay
+ 002C  E8 006E				call cleanDotArray
+ 002F  BF 0202				mov di,GCOW
+ 0032  BE 0000				mov si,0
+ 0035  E8 0080				call displayWord1
+ 0038  BF 0000				mov di,0
+ 003B  BE 0201				mov si,RCOW
+ 003E  E8 0077				call displayWord1
+ 0041  BF 0202				mov di,GCOW
+ 0044  BE 0201				mov si,RCOW
+ 0047  E8 006E				call displayWord1
+ 004A  E8 00C9				call delay
+ 004D  E8 00C6				call delay
+ 0050  E8 004A				call cleanDotArray
+ 0053  BF 0202				mov di,GCOW
+ 0056  BE 0000				mov si,0
+ 0059  E8 0068				call displayWord2
+ 005C  BF 0000				mov di,0
+ 005F  BE 0201				mov si,RCOW
+ 0062  E8 005F				call displayWord2
+ 0065  BF 0202				mov di,GCOW
+ 0068  BE 0201				mov si,RCOW
+ 006B  E8 0056				call displayWord2
+ 006E  E8 00A5				call delay
+ 0071  E8 00A2				call delay
+ 0074  E8 0026				call cleanDotArray
+ 0077  BF 0202				mov di,GCOW
+ 007A  BE 0000				mov si,0
+ 007D  E8 0050				call displayWord3
+ 0080  BF 0000				mov di,0
+ 0083  BE 0201				mov si,RCOW
+ 0086  E8 0047				call displayWord3
+ 0089  BF 0202				mov di,GCOW
+ 008C  BE 0201				mov si,RCOW
+ 008F  E8 003E				call displayWord3
+ 0092  E9 FF73				jmp again
+ 0095  F4				hlt
+					
+
+ 0096				init8255 proc
+ 0096  BA 0203				mov dx,kz_8255
+ 0099  B0 80				mov al,80h
+ 009B  EE				out dx,al
+ 009C  C3				ret
+ 009D				init8255 endp
+
+ 009D				cleanDotArray proc
+ 009D  B0 00				mov al,0
+ 009F  BA 0200				mov dx,ROW
+ 00A2  EE				out dx,al
+ 00A3  BA 0202				mov dx,GCOW
+ 00A6  EE				out dx,al
+ 00A7  BA 0201				mov dx,RCOW
+ 00AA  EE				out dx,al
+ 00AB  C3				ret
+ 00AC				cleanDotArray endp
+
+ 00AC				displayWord0 proc
+ 00AC  B9 0300				mov cx,300h
+ 00AF				again_0:
+ 00AF  BB 0000 R			mov bx, offset ZK0
+ 00B2  E8 0027				call displayWord1Times
+ 00B5  E2 F8				loop again_0
+ 00B7  C3				ret
+ 00B8				displayWord0 endp
+
+ 00B8				displayWord1 proc
+ 00B8  B9 0300				mov cx,300h
+ 00BB				again_01:
+ 00BB  BB 0008 R			mov bx, offset ZK1
+ 00BE  E8 001B				call displayWord1Times
+ 00C1  E2 F8				loop again_01
+ 00C3  C3				ret
+ 00C4				displayWord1 endp
+
+ 00C4				displayWord2 proc
+ 00C4  B9 0300				mov cx,300h
+ 00C7				again_02:
+ 00C7  BB 0010 R			mov bx, offset ZK2
+ 00CA  E8 000F				call displayWord1Times
+ 00CD  E2 F8				loop again_02
+ 00CF  C3				ret
+ 00D0				displayWord2 endp
+
+ 00D0				displayWord3 proc
+ 00D0  B9 0300				mov cx,300h
+ 00D3				again_03:
+ 00D3  BB 0018 R			mov bx, offset ZK3
+ 00D6  E8 0003				call displayWord1Times
+ 00D9  E2 F8				loop again_03
+ 00DB  C3				ret
+ 00DC				displayWord3 endp
+
+
+ 00DC				displayWord1Times proc
+ 00DC  51				push cx
+ 00DD  B9 0008				mov cx,8
+ 00E0  B4 FE				mov ah,0FEh
+ 00E2				again_1:
+ 00E2  BA 0200				mov dx,ROW
+ 00E5  8A C4				mov al,ah
+ 00E7  EE				out dx,al
+ 00E8  8A 07				mov al,[bx]
+ 00EA  83 FF 00				cmp di,0
+ 00ED  74 03				je next_0
+ 00EF  8B D7				mov dx,di
+ 00F1  EE				out dx,al
+ 00F2				next_0:
+ 00F2  83 FE 00				cmp si,0
+ 00F5  74 03				je next_1
+ 00F7  8B D6				mov dx,si
+ 00F9  EE				out dx,al
+ 00FA				next_1:
+ 00FA  E8 0019				call delay
+ 00FD  B0 00				mov al,0
+ 00FF  83 FF 00				cmp di,0
+ 0102  74 03				je next_2
+ 0104  8B D7				mov dx,di
+ 0106  EE				out dx,al
+ 0107				next_2:
+ 0107  83 FE 00				cmp si,0
+ 010A  74 03				je next_3
+ 010C  8B D6				mov dx,si
+ 010E  EE				out dx,al
+ 010F				next_3:
+ 010F  43				inc bx
+ 0110  D0 C4				rol ah,1
+ 0112  E2 CE				loop again_1
+ 0114  59				pop cx
+ 0115  C3				ret
+ 0116				displayWord1Times endp
+ 0116				delay proc
+ 0116  51				push cx
+ 0117  B9 0080				mov cx,80h
+ 011A  E2 FE			L0:	loop L0
+ 011C  59				pop cx
+ 011D  C3				ret
+ 011E				delay endp
+ 011E				code ends
+
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    10/15/23 16:36:11
+4.asm							     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 011E	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 0020	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+cleanDotArray  . . . . . . . . .	P Near	 009D	  code	Length= 000F Private
+delay  . . . . . . . . . . . . .	P Near	 0116	  code	Length= 0008 Private
+displayWord0 . . . . . . . . . .	P Near	 00AC	  code	Length= 000C Private
+displayWord1Times  . . . . . . .	P Near	 00DC	  code	Length= 003A Private
+displayWord1 . . . . . . . . . .	P Near	 00B8	  code	Length= 000C Private
+displayWord2 . . . . . . . . . .	P Near	 00C4	  code	Length= 000C Private
+displayWord3 . . . . . . . . . .	P Near	 00D0	  code	Length= 000C Private
+init8255 . . . . . . . . . . . .	P Near	 0096	  code	Length= 0007 Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+GCOW . . . . . . . . . . . . . .	Number	 0202h	 
+L0 . . . . . . . . . . . . . . .	L Near	 011A	  code	
+RCOW . . . . . . . . . . . . . .	Number	 0201h	 
+ROW  . . . . . . . . . . . . . .	Number	 0200h	 
+ZK0  . . . . . . . . . . . . . .	Byte	 0000	  data	
+ZK1  . . . . . . . . . . . . . .	Byte	 0008	  data	
+ZK2  . . . . . . . . . . . . . .	Byte	 0010	  data	
+ZK3  . . . . . . . . . . . . . .	Byte	 0018	  data	
+again_01 . . . . . . . . . . . .	L Near	 00BB	  code	
+again_02 . . . . . . . . . . . .	L Near	 00C7	  code	
+again_03 . . . . . . . . . . . .	L Near	 00D3	  code	
+again_0  . . . . . . . . . . . .	L Near	 00AF	  code	
+again_1  . . . . . . . . . . . .	L Near	 00E2	  code	
+again  . . . . . . . . . . . . .	L Near	 0008	  code	
+kz_8255  . . . . . . . . . . . .	Number	 0203h	 
+next_0 . . . . . . . . . . . . .	L Near	 00F2	  code	
+next_1 . . . . . . . . . . . . .	L Near	 00FA	  code	
+next_2 . . . . . . . . . . . . .	L Near	 0107	  code	
+next_3 . . . . . . . . . . . . .	L Near	 010F	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+
+	   1 Warnings
+	   0 Errors

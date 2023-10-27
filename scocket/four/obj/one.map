@@ -1,0 +1,23 @@
+LINK : warning L4021: no stack segment
+
+ Start  Stop   Length Name                   Class
+ 00000H 00000H 00000H _TEXT                  CODE
+ 00000H 00000H 00000H _DATA                  DATA
+ 00000H 00000H 00001H DATA                   
+ 00010H 0001CH 0000DH CODE                   
+
+ Origin   Group
+ 0000:0   DGROUP
+
+  Address         Publics by Name
+
+
+  Address         Publics by Value
+
+
+Line numbers for ..\obj\one.obj(one.asm) segment CODE
+
+    13 0001:0000    14 0001:0003    15 0001:0005    16 0001:0008
+    17 0001:000b    18 0001:000c
+
+Program entry point at 0001:0000

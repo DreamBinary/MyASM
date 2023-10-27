@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<Project name="three" type="asm">
+  <file path="five.asm" />
+  <file path="four.asm" />
+  <file path="one.asm" />
+  <file path="six.asm" />
+  <file path="three.asm" />
+  <file path="two.asm" />
+  <Active path="four.asm" />
+</Project>

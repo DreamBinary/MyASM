@@ -1,0 +1,165 @@
+Microsoft (R) Macro Assembler Version 6.11		    09/24/23 16:04:04
+counter.asm						     Page 1 - 1
+
+
+				;**************************************
+				;*           循环计数100              *
+				;* 设计方案2的代码，该方案能在实验箱  *
+				;* 上实现                             *
+				;* coded by NYT   2023.9.20
+				;**************************************
+
+				.model small       
+				.486 
+
+ = 0210				ioport		equ 0210h
+ = ioport			io8255a		equ ioport
+ = 0212				io8255c		equ ioport+2h
+ = 0213				io8255k		equ ioport+3h
+
+ 0000				data  segment
+ 0000 3F 06 5B 4F 66			leds   db   3fh,06h,5bh,4fh,66h
+ 0005  6D 7D 07 7F 6F			       db   6dh,7dh,07h,7fh,6fh
+ 000A 00				counter db   ?  
+ 000B 00				d0    db   0 ;;;存放counter个位数
+ 000C 00				d1    db   0;;;存放counter十位数
+ 000D				data ends
+
+ 0000				code  segment
+				assume cs:code,ds:data
+ 0000				start:	
+ 0000  B8 ---- R		        mov  ax,data
+counter.asm(27): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8				mov  ds,ax
+ 0005  C6 06 000A R 00			mov  counter,0
+ 000A  E8 000C				call init8255;设置A口、C上半口为方式0与输出、C下半口输入
+ 000D  E8 0010			again:	call wait4High;;等待PC0变成高电平,并在数码管上显示counter
+ 0010  E8 0019				call wait4Low;;等待PC0变成低电平,并在数码管上显示counter
+ 0013  E8 0022				call addCounter;;counter增大1，若大于99则counter设置成0
+ 0016  EB F5				jmp  again
+ 0018  F4			  	hlt
+
+ 0019				init8255 proc
+ 0019  BA 0213				mov dx,io8255k    ;将8255设为A口C上口输出下口输入
+ 001C  B0 81				mov al,10000001b;
+ 001E  EE				out dx,al
+ 001F  C3				ret 
+ 0020				init8255 endp
+
+ 0020				wait4High proc	
+ 0020  E8 0027			nextL:  call dispNumber;;;;在数码管上显示counter
+ 0023  BA 0212				mov  dx,io8255c              
+ 0026  EC				in   al ,dx
+ 0027  A8 01				test al,01h;;;PC0等于0吗？
+ 0029  74 F5				jz   nextL
+ 002B  C3				ret 
+ 002C				wait4High endp
+
+ 002C				wait4Low proc
+ 002C  E8 001B			nextH:  call  dispNumber;;;;在数码管上显示counter
+ 002F  BA 0212				mov   dx,io8255c             
+ 0032  EC				in    al ,dx
+ 0033  A8 01				test  al,01h;;;PC0等于0吗？
+ 0035  75 F5				jnz  nextH
+ 0037  C3				ret 
+ 0038				wait4Low endp
+
+ 0038				addCounter proc
+ 0038  FE 06 000A R			inc counter ;;counter 增大1
+ 003C  33 C0				xor ax,ax
+ 003E  A0 000A R			mov al,counter
+ 0041  B3 64				mov bl,100
+ 0043  F6 F3				div bl ;;counter除以100
+ 0045  88 26 000A R			mov counter,ah;;;ah等于余数
+ 0049  C3				ret 
+ 004A				addCounter endp
+
+ 004A				dispNumber proc
+ 004A  33 C0			        xor ax,ax	
+ 004C  A0 000A R			mov al,counter
+ 004F  B3 0A				mov bl,10
+ 0051  F6 F3				div bl ;;counter除以10
+ 0053  A2 000C R			mov d1,al;;al等于商，故dl为counter的十位上的数；
+ 0056  88 26 000B R			mov d0,ah;;ah等于余数，故d0为counter的个位上的数；
+					
+ 005A  A0 000B R			mov al,d0
+ 005D  BB 0000 R			mov bx,offset leds
+ 0060  D7				xlat  ;;执行完该指令，al=d0的段码
+ 0061  BA 0210				mov dx,io8255a
+ 0064  EE				out dx,al;;将d0的段码输出A口
+ 0065  B0 40				mov al,01000000B;对应PC6
+ 0067  BA 0212				mov dx,io8255c
+ 006A  EE				out dx,al;;通过C口将PC6设置为1,点亮右边数码管，显示个位数。
+ 006B  B0 00				mov al,0
+ 006D  EE				out dx,al;;通过C口将PC6设置为0,熄灭右边数码管，不显示个位数。
+ 006E  A0 000C R			mov al,d1
+ 0071  BB 0000 R			mov bx,offset leds
+ 0074  D7				xlat 
+ 0075  BA 0210				mov dx,io8255a
+ 0078  EE				out dx,al;;将d1的段码输出A口
+ 0079  B0 80				mov al,10000000B;;;对应PC7
+ 007B  BA 0212				mov dx,io8255c
+ 007E  EE				out dx,al;;通过C口将PC7设置为1,点亮右二数码管，显示十位数。
+ 007F  B0 00				mov al,0
+ 0081  EE				out dx,al;;通过C口将PC7设置为0,熄灭右右二数码管，不显示十位数。
+ 0082  C3				ret 
+ 0083				dispNumber endp 
+				    
+ 0083				code ends
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    09/24/23 16:04:04
+counter.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 0083	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 000D	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+addCounter . . . . . . . . . . .	P Near	 0038	  code	Length= 0012 Private
+dispNumber . . . . . . . . . . .	P Near	 004A	  code	Length= 0039 Private
+init8255 . . . . . . . . . . . .	P Near	 0019	  code	Length= 0007 Private
+wait4High  . . . . . . . . . . .	P Near	 0020	  code	Length= 000C Private
+wait4Low . . . . . . . . . . . .	P Near	 002C	  code	Length= 000C Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+again  . . . . . . . . . . . . .	L Near	 000D	  code	
+counter  . . . . . . . . . . . .	Byte	 000A	  data	
+d0 . . . . . . . . . . . . . . .	Byte	 000B	  data	
+d1 . . . . . . . . . . . . . . .	Byte	 000C	  data	
+io8255a  . . . . . . . . . . . .	Text   	 ioport
+io8255c  . . . . . . . . . . . .	Number	 0212h	 
+io8255k  . . . . . . . . . . . .	Number	 0213h	 
+ioport . . . . . . . . . . . . .	Number	 0210h	 
+leds . . . . . . . . . . . . . .	Byte	 0000	  data	
+nextH  . . . . . . . . . . . . .	L Near	 002C	  code	
+nextL  . . . . . . . . . . . . .	L Near	 0020	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+
+	   1 Warnings
+	   0 Errors

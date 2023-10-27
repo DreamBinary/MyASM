@@ -1,0 +1,189 @@
+Microsoft (R) Macro Assembler Version 6.11		    09/24/23 16:41:55
+five.asm						     Page 1 - 1
+
+
+				;**************************************                  *
+				;* coded by CXQ and ZHC
+				;**************************************
+
+				.model small       
+				.486 
+
+ = 0210				ioport		equ 0210h
+ = ioport			io8255a		equ ioport
+ = 0211				io8255b     equ ioport+1h
+ = 0212				io8255c		equ ioport+2h
+ = 0213				io8255k		equ ioport+3h
+
+ 0000				data  segment
+ 0000 3F 06 5B 4F 66			leds   db   3fh,06h,5bh,4fh,66h
+ 0005  6D 7D 07 7F 6F			       db   6dh,7dh,07h,7fh,6fh
+ 000A 00				kstate db ?
+ 000B 3C				counter db 60
+ 000C 00				d0    db   0 ;;;存放counter个位数
+ 000D 00				d1    db   0;;;存放counter十位数
+ 000E				data ends
+
+ 0000				code  segment
+				assume cs:code,ds:data
+ 0000				start:	
+ 0000  B8 ---- R		    mov  ax,data
+five.asm(26): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8				mov  ds,ax
+ 0005  E8 0019				call init8255;设置A口、C上半口为方式0与输出、C下半口输入
+ 0008				s:
+ 0008  C6 06 000B R 3C			mov counter, 60
+ 000D  E8 0032				call waitLow;
+ 0010				again:	
+ 0010  E8 0015				call delayOne;
+ 0013  FE 0E 000B R			dec counter;
+ 0017  80 3E 000B R 00			cmp counter, 0
+ 001C  76 EA				jna s
+ 001E  EB F0				jmp  again
+ 0020  F4			  	hlt
+
+ 0021				init8255 proc
+ 0021  BA 0213				mov dx, io8255k
+ 0024  B0 91				mov al, 10010001B;
+ 0026  EE				out dx, al
+ 0027  C3				ret
+ 0028				init8255 endp
+
+ 0028				delayOne proc
+ 0028  B9 03E8				mov cx, 1000
+ 002B				ag:
+ 002B  E8 0002				call delay
+ 002E  E2 FB				loop ag
+ 0030				delayOne endp
+
+ 0030				delay proc
+ 0030  E8 0003				call wait4High
+ 0033  E8 0018				call wait4Low
+ 0036				delay endp
+
+ 0036				wait4High proc	
+ 0036				nextL: 
+ 0036  E8 0021			call dispNumber
+ 0039  BA 0212				mov  dx,io8255c              
+ 003C  EC				in   al ,dx
+ 003D  A8 01				test al,01h;;;PC0等于0吗？
+ 003F  74 F5				jz   nextL
+ 0041  C3				ret 
+ 0042				wait4High endp
+
+ 0042				waitLow proc
+ 0042				nextH2: 
+ 0042  E8 0015				call dispNumber
+ 0045  BA 0212				mov   dx,io8255c             
+ 0048  EC				in    al ,dx
+ 0049  A8 02				test  al,02h;;;PC0等于0吗？
+ 004B  75 F5				jnz  nextH2
+ 004D  C3				ret 
+ 004E				waitLow endp
+
+ 004E				wait4Low proc
+ 004E				nextH: 
+ 004E  E8 0009				call dispNumber
+ 0051  BA 0212				mov   dx,io8255c             
+ 0054  EC				in    al ,dx
+ 0055  A8 01				test  al,01h;;;PC0等于0吗？
+ 0057  75 F5				jnz  nextH
+ 0059  C3				ret 
+ 005A				wait4Low endp
+
+ 005A				dispNumber proc
+ 005A  33 C0			    xor ax,ax	
+ 005C  A0 000B R			mov al,counter
+ 005F  B3 0A				mov bl,10
+ 0061  F6 F3				div bl ;;counter除以10
+ 0063  A2 000D R			mov d1,al;;al等于商，故dl为counter的十位上的数；
+ 0066  88 26 000C R			mov d0,ah;;ah等于余数，故d0为counter的个位上的数；
+					
+ 006A  A0 000C R			mov al,d0
+ 006D  BB 0000 R			mov bx,offset leds
+ 0070  D7				xlat  ;;执行完该指令，al=d0的段码
+ 0071  BA 0211				mov dx,io8255b
+ 0074  EE				out dx,al;;将d0的段码输出A口
+ 0075  B0 40				mov al,01000000B;对应PC6
+ 0077  BA 0212				mov dx,io8255c
+ 007A  EE				out dx,al;;通过C口将PC6设置为1,点亮右边数码管，显示个位数。
+ 007B  B0 00				mov al,0
+ 007D  EE				out dx,al;;通过C口将PC6设置为0,熄灭右边数码管，不显示个位数。
+ 007E  A0 000D R			mov al,d1
+ 0081  BB 0000 R			mov bx,offset leds
+ 0084  D7				xlat 
+ 0085  BA 0211				mov dx,io8255b
+ 0088  EE				out dx,al;;将d1的段码输出A口
+ 0089  B0 80				mov al,10000000B;;;对应PC7
+ 008B  BA 0212				mov dx,io8255c
+ 008E  EE				out dx,al;;通过C口将PC7设置为1,点亮右二数码管，显示十位数。
+ 008F  B0 00				mov al,0
+ 0091  EE				out dx,al;;通过C口将PC7设置为0,熄灭右右二数码管，不显示十位数。
+ 0092  C3				ret 
+ 0093				dispNumber endp 
+				    
+ 0093				code ends
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    09/24/23 16:41:55
+five.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 0093	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 000E	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+delayOne . . . . . . . . . . . .	P Near	 0028	  code	Length= 0008 Private
+delay  . . . . . . . . . . . . .	P Near	 0030	  code	Length= 0006 Private
+dispNumber . . . . . . . . . . .	P Near	 005A	  code	Length= 0039 Private
+init8255 . . . . . . . . . . . .	P Near	 0021	  code	Length= 0007 Private
+wait4High  . . . . . . . . . . .	P Near	 0036	  code	Length= 000C Private
+wait4Low . . . . . . . . . . . .	P Near	 004E	  code	Length= 000C Private
+waitLow  . . . . . . . . . . . .	P Near	 0042	  code	Length= 000C Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+again  . . . . . . . . . . . . .	L Near	 0010	  code	
+ag . . . . . . . . . . . . . . .	L Near	 002B	  code	
+counter  . . . . . . . . . . . .	Byte	 000B	  data	
+d0 . . . . . . . . . . . . . . .	Byte	 000C	  data	
+d1 . . . . . . . . . . . . . . .	Byte	 000D	  data	
+io8255a  . . . . . . . . . . . .	Text   	 ioport
+io8255b  . . . . . . . . . . . .	Number	 0211h	 
+io8255c  . . . . . . . . . . . .	Number	 0212h	 
+io8255k  . . . . . . . . . . . .	Number	 0213h	 
+ioport . . . . . . . . . . . . .	Number	 0210h	 
+kstate . . . . . . . . . . . . .	Byte	 000A	  data	
+leds . . . . . . . . . . . . . .	Byte	 0000	  data	
+nextH2 . . . . . . . . . . . . .	L Near	 0042	  code	
+nextH  . . . . . . . . . . . . .	L Near	 004E	  code	
+nextL  . . . . . . . . . . . . .	L Near	 0036	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+s  . . . . . . . . . . . . . . .	L Near	 0008	  code	
+
+	   1 Warnings
+	   0 Errors

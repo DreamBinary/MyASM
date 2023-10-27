@@ -1,0 +1,175 @@
+Microsoft (R) Macro Assembler Version 6.11		    09/24/23 15:37:57
+one.asm							     Page 1 - 1
+
+
+				;**************************************
+				;*           循环计数100              *
+				;* 设计方案2的代码，该方案能在实验箱  *
+				;* 上实现                             *
+				;* coded by NYT   2023.9.20
+				;**************************************
+
+				.model small       
+				.486 
+
+ = 0210				ioport		equ 0210h
+ = ioport			io8255a		equ ioport
+ = 0211				io8255b     equ ioport+1h
+ = 0212				io8255c		equ ioport+2h
+ = 0213				io8255k		equ ioport+3h
+
+ 0000				data  segment
+ 0000 00				kstate db ?
+ 0001 00				lighter db ?
+ 0002				data ends
+
+ 0000				code  segment
+				assume cs:code,ds:data
+ 0000				start:	
+ 0000  B8 ---- R		    mov  ax,data
+one.asm(25): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8				mov  ds,ax
+ 0005  E8 000C				call init8255;设置A口、C上半口为方式0与输出、C下半口输入
+ 0008				again:	
+ 0008  E8 0010				call wait4High;;等待PC0变成高电平,并在数码管上显示counter
+ 000B  E8 001F				call countLight
+ 000E  E8 0013				call wait4Low;;等待PC0变成低电平,并在数码管上显示counter
+ 0011  EB F5				jmp  again
+ 0013  F4			  	hlt
+
+ 0014				init8255 proc
+ 0014  BA 0213				mov dx, io8255k
+ 0017  B0 91				mov al, 10010001B;
+ 0019  EE				out dx, al
+ 001A  C3				ret
+ 001B				init8255 endp
+
+ 001B				wait4High proc	
+ 001B				nextL: 
+ 001B  BA 0212				mov  dx,io8255c              
+ 001E  EC				in   al ,dx
+ 001F  A8 01				test al,01h;;;PC0等于0吗？
+ 0021  74 F8				jz   nextL
+ 0023  C3				ret 
+ 0024				wait4High endp
+
+ 0024				wait4Low proc
+ 0024				nextH: 
+ 0024  BA 0212				mov   dx,io8255c             
+ 0027  EC				in    al ,dx
+ 0028  A8 01				test  al,01h;;;PC0等于0吗？
+ 002A  75 F8				jnz  nextH
+ 002C  C3				ret 
+ 002D				wait4Low endp
+
+ 002D				countLight proc
+ 002D  E8 0035				call readPA
+ 0030  A0 0000 R			mov al, kstate
+ 0033  B3 00				mov bl, 0
+ 0035  B9 0008				mov cx, 8
+ 0038				lp:
+ 0038  D0 E0				shl al, 1
+ 003A  73 04				jnc next
+ 003C  FE C3				inc bl
+ 003E  FE CF				dec bh
+ 0040				next:
+ 0040  E2 F6				loop lp
+					
+ 0042  80 FB 03				cmp bl, 3
+ 0045  76 07				jna green
+ 0047  80 FB 06				cmp bl, 6
+ 004A  76 09				jna yellow
+ 004C  EB 0E				jmp red
+					
+ 004E				green:
+ 004E  C6 06 0001 R 04			mov lighter, 00000100B;
+ 0053  EB 0C				jmp final
+ 0055				yellow:
+ 0055  C6 06 0001 R 02			mov lighter, 00000010B;
+ 005A  EB 05				jmp final
+ 005C				red:
+ 005C  C6 06 0001 R 00			mov lighter, 00000000B;
+ 0061				final:
+ 0061  E8 0009				call writePB
+ 0064  C3				ret 
+ 0065				countLight endp
+
+ 0065				readPA proc
+ 0065  BA 0210				mov dx, io8255a
+ 0068  EC				in al, dx
+ 0069  A2 0000 R			mov kstate, al
+ 006C  C3				ret
+ 006D				readPA endp
+
+
+ 006D				writePB proc
+ 006D  A0 0001 R			mov al, lighter
+ 0070  BA 0211				mov dx, io8255b
+ 0073  EE				out dx, al
+ 0074  C3				ret
+ 0075				writePB endp
+				    
+ 0075				code ends
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    09/24/23 15:37:57
+one.asm							     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 0075	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 0002	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+countLight . . . . . . . . . . .	P Near	 002D	  code	Length= 0038 Private
+init8255 . . . . . . . . . . . .	P Near	 0014	  code	Length= 0007 Private
+readPA . . . . . . . . . . . . .	P Near	 0065	  code	Length= 0008 Private
+wait4High  . . . . . . . . . . .	P Near	 001B	  code	Length= 0009 Private
+wait4Low . . . . . . . . . . . .	P Near	 0024	  code	Length= 0009 Private
+writePB  . . . . . . . . . . . .	P Near	 006D	  code	Length= 0008 Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+again  . . . . . . . . . . . . .	L Near	 0008	  code	
+final  . . . . . . . . . . . . .	L Near	 0061	  code	
+green  . . . . . . . . . . . . .	L Near	 004E	  code	
+io8255a  . . . . . . . . . . . .	Text   	 ioport
+io8255b  . . . . . . . . . . . .	Number	 0211h	 
+io8255c  . . . . . . . . . . . .	Number	 0212h	 
+io8255k  . . . . . . . . . . . .	Number	 0213h	 
+ioport . . . . . . . . . . . . .	Number	 0210h	 
+kstate . . . . . . . . . . . . .	Byte	 0000	  data	
+lighter  . . . . . . . . . . . .	Byte	 0001	  data	
+lp . . . . . . . . . . . . . . .	L Near	 0038	  code	
+nextH  . . . . . . . . . . . . .	L Near	 0024	  code	
+nextL  . . . . . . . . . . . . .	L Near	 001B	  code	
+next . . . . . . . . . . . . . .	L Near	 0040	  code	
+red  . . . . . . . . . . . . . .	L Near	 005C	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+yellow . . . . . . . . . . . . .	L Near	 0055	  code	
+
+	   1 Warnings
+	   0 Errors

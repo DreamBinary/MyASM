@@ -1,0 +1,139 @@
+Microsoft (R) Macro Assembler Version 6.11		    10/15/23 15:21:44
+5.asm							     Page 1 - 1
+
+
+				.model small
+				.486
+ = 0200				PA_8255 equ 200h
+ = 0202				PC_8255 equ 202h
+ = 0203				KZ_8255 equ 203h
+ = 0024				green_ns equ 24h
+ = 0081				green_ew equ 81h
+ = 00FF				flag equ 0ffh
+
+ 0000				data segment
+ 0000 24 44 04 44 04 44			states   db 24h, 44h, 04h, 44h, 04h, 44h, 04h ; 六个灯可能
+       04
+ 0007  81 82 80 82 80 82	       db 81h, 82h, 80h, 82h, 80h, 82h, 80h ; 的状态数据
+       80
+ 000E  FF			       db 0ffh    ; 一轮结束标志
+ 000F				data ends
+ 0000				code segment
+					assume cs:code,ds:data
+ 0000				start:
+ 0000  B8 ---- R			mov ax,data
+5.asm(18): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8				mov ds,ax
+ 0005  E8 0026				call init8255
+ 0008					again:
+ 0008  BE 0000					mov si,0
+ 000B				nextstate:
+ 000B  8A 84 0000 R				mov al,states[si]
+ 000F  BA 0200					mov dx,PA_8255
+ 0012  EE					out dx,al
+ 0013  EB F6					jmp nextstate
+ 0015  F4					hlt
+						
+ 0016				delay30s proc
+ 0016  B9 000A					mov cx,10
+ 0019				again_30s:
+ 0019  E8 0019					call wait4high
+ 001C  E8 001F					call wait4low
+ 001F  E2 F8					loop again_30s
+ 0021  C3					ret
+ 0022				delay30s endp
+						
+ 0022				delay2s proc
+ 0022  B9 0001					mov cx,1
+ 0025				again_2s:
+ 0025  E8 000D					call wait4high
+ 0028  E8 0013					call wait4low
+ 002B  E2 F8					loop again_2s
+ 002D  C3					ret
+ 002E				delay2s endp
+					
+ 002E				init8255 proc
+ 002E  BA 0203				mov dx,KZ_8255
+ 0031  B0 81				mov al,10000001B;通过C口读入脉冲
+ 0033  EE				out dx,al
+ 0034  C3				ret
+ 0035				init8255 endp
+
+ 0035				wait4High proc
+ 0035  BA 0202				mov dx,PC_8255
+ 0038					nextH:
+ 0038  EC					in al,dx
+ 0039  A8 01					test al,1 ;同 al & 1
+ 003B  75 FB					jnz nextH
+ 003D  C3				ret
+ 003E				wait4High endp
+
+ 003E				wait4Low proc
+ 003E  BA 0202				mov dx,PC_8255
+ 0041					nextL:
+ 0041  EC					in al,dx
+ 0042  A8 01					test al,1 ;同 al & 1
+ 0044  74 FB					jz nextL
+ 0046  C3				ret
+ 0047				wait4Low endp
+
+ 0047				code ends
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    10/15/23 15:21:44
+5.asm							     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 0047	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 000F	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+delay2s  . . . . . . . . . . . .	P Near	 0022	  code	Length= 000C Private
+delay30s . . . . . . . . . . . .	P Near	 0016	  code	Length= 000C Private
+init8255 . . . . . . . . . . . .	P Near	 002E	  code	Length= 0007 Private
+wait4High  . . . . . . . . . . .	P Near	 0035	  code	Length= 0009 Private
+wait4Low . . . . . . . . . . . .	P Near	 003E	  code	Length= 0009 Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+KZ_8255  . . . . . . . . . . . .	Number	 0203h	 
+PA_8255  . . . . . . . . . . . .	Number	 0200h	 
+PC_8255  . . . . . . . . . . . .	Number	 0202h	 
+again_2s . . . . . . . . . . . .	L Near	 0025	  code	
+again_30s  . . . . . . . . . . .	L Near	 0019	  code	
+again  . . . . . . . . . . . . .	L Near	 0008	  code	
+flag . . . . . . . . . . . . . .	Number	 00FFh	 
+green_ew . . . . . . . . . . . .	Number	 0081h	 
+green_ns . . . . . . . . . . . .	Number	 0024h	 
+nextH  . . . . . . . . . . . . .	L Near	 0038	  code	
+nextL  . . . . . . . . . . . . .	L Near	 0041	  code	
+nextstate  . . . . . . . . . . .	L Near	 000B	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+states . . . . . . . . . . . . .	Byte	 0000	  data	
+
+	   1 Warnings
+	   0 Errors

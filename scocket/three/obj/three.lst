@@ -1,0 +1,88 @@
+Microsoft (R) Macro Assembler Version 6.11		    10/22/23 14:54:02
+three.asm						     Page 1 - 1
+
+
+				;**************************************                  *
+				;* coded by CXQ and ZHC
+				;**************************************
+
+				.model small       
+				.486 
+
+ = 0200				t0 equ 200h
+ = 0201				t1 equ 201h
+ = 0202				t2 equ 202h
+ = 0203				tkz equ 203h
+
+ 0000				code  segment
+				assume cs: code
+ 0000				start:
+					; init
+ 0000  BA 0203				mov dx, tkz
+three.asm(17): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  B0 36				mov al, 00110110b
+ 0005  EE				out dx, al
+ 0006  BA 0200				mov dx, t0
+ 0009  B8 03E8				mov ax, 1000
+ 000C  EE				out dx, al
+ 000D  8A C4				mov al, ah
+ 000F  EE				out dx, al
+					
+ 0010  BA 0203				mov dx, tkz
+ 0013  B0 76				mov al, 01110110b
+ 0015  EE				out dx, al
+ 0016  BA 0201				mov dx, t1
+ 0019  B8 03E8				mov ax, 1000
+ 001C  EE				out dx, al
+ 001D  8A C4				mov al, ah
+ 001F  EE				out dx, al
+					
+ 0020  BA 0203				mov dx, tkz
+ 0023  B0 B4				mov al, 10110100b  ; method 2
+ 0025  EE				out dx, al
+ 0026  BA 0202				mov dx, t2
+ 0029  B8 0005				mov ax, 5
+ 002C  EE				out dx, al
+ 002D  8A C4				mov al, ah
+ 002F  EE				out dx, al
+					
+ 0030  F4				hlt
+ 0031				code ends
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    10/22/23 14:54:02
+three.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 0031	  Para	  Private 
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+t0 . . . . . . . . . . . . . . .	Number	 0200h	 
+t1 . . . . . . . . . . . . . . .	Number	 0201h	 
+t2 . . . . . . . . . . . . . . .	Number	 0202h	 
+tkz  . . . . . . . . . . . . . .	Number	 0203h	 
+
+	   1 Warnings
+	   0 Errors

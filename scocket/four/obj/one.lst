@@ -1,0 +1,63 @@
+Microsoft (R) Macro Assembler Version 6.11		    10/26/23 15:01:22
+one.asm							     Page 1 - 1
+
+
+				.model small       
+				.486  ;; 486 ָ�
+
+ = 0200				addr_0832 equ 200h
+
+ 0000				data  segment
+ 0000 99				n_1v db 153
+ 0001				data ends
+
+ 0000				code  segment
+				assume cs:code, ds:data
+ 0000				start:	
+ 0000  B8 ---- R		    mov ax, data  ;; if use data
+one.asm(13): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8			    mov ds, ax
+ 0005  BA 0200			    mov dx, addr_0832
+ 0008  A0 0000 R		    mov al, n_1v
+ 000B  EE			    out dx, al
+ 000C  F4			  	hlt
+ 000D				code ends
+				end start
+				; v = n * 5 / 128 - 5
+				; n = 
+Microsoft (R) Macro Assembler Version 6.11		    10/26/23 15:01:22
+one.asm							     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 000D	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 0001	  Para	  Private 
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+addr_0832  . . . . . . . . . . .	Number	 0200h	 
+n_1v . . . . . . . . . . . . . .	Byte	 0000	  data	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+
+	   1 Warnings
+	   0 Errors

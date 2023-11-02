@@ -1,0 +1,210 @@
+Microsoft (R) Macro Assembler Version 6.11		    11/02/23 14:40:38
+1.asm							     Page 1 - 1
+
+
+				;4、试在实验箱上设计一个系统，该系统每 100 毫秒采样试验箱中一个直流电源
+				;的电压（0~5v），并将所得数字量以十六进制方式显示在 8 段数码上。
+				;cs0-0809.cs
+				;cs1-8255.cs
+				;cs6-8253.cs
+				;8253.out0-8255.pc1
+				;8253.clk0-100hz
+				;8253.gate0-k1(1)
+				;8255.pb6~pb0-gfedcba
+				;8255.pc0-0809.eoc
+				;8255.pc6--bit1
+				;8255.pc7--bit2
+				;0809.clk-100khz
+				;vout1-0809.int0
+
+				.model small 
+				.486
+ = 0200				in0_0809 equ 200h
+ = 0210				pa_8255 equ 210h
+ = 0211				pb_8255 equ 211h
+ = 0212				pc_8255 equ 212h
+ = 0213				ctr_8255 equ 213h
+ = 0260				T0_8253 equ 260h  
+ = 0263				KZ_8253 equ 263h
+
+ 0000				data segment
+ 0000 3F 06 5B 4F 66 6D			led db 3fh,06h,5bh,4fh,66h,6dh,7dh,07h,7fh,67h
+       7D 07 7F 67
+ 000A  77 7C 39 5E 79 71			db 77h,7ch,39h,5eh,79h,71h
+ 0010 00				n db ?
+ 0011 00				high_num db ?
+ 0012 00				low_num db ?
+ 0013				data ends
+
+ 0000				code segment
+					assume cs:code,ds:data
+ 0000				start:
+ 0000  B8 ---- R			mov ax,data
+1.asm(37): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8				mov ds,ax
+ 0005  E8 0012				call init8255
+ 0008				again1:
+ 0008  E8 002E				call delay300ms
+ 000B  E8 0013				call start0809	
+ 000E  E8 0017				call check0809eoc
+ 0011  E8 0020				call read0809	
+ 0014  A2 0010 R			mov n,al
+ 0017  EB EF				jmp again1
+ 0019  F4				hlt
+					
+ 001A				init8255 proc
+ 001A  BA 0213				mov dx,ctr_8255
+ 001D  B0 81				mov al,10000001b
+ 001F  EE				out dx,al
+ 0020  C3				ret
+ 0021				init8255 endp
+
+ 0021				start0809 proc
+ 0021  BA 0200				mov dx,200h
+ 0024  B0 02				mov al,2
+ 0026  EE				out dx,al
+ 0027  C3				ret
+ 0028				start0809 endp
+
+ 0028				check0809eoc proc
+ 0028				again:
+ 0028  E8 0030				call display
+ 002B  BA 0212				mov dx,pc_8255
+ 002E  EC				in al,dx
+ 002F  A8 01				test al,01h
+ 0031  74 F5				jz again  ;=0跳again
+ 0033  C3				ret
+ 0034				check0809eoc endp
+
+ 0034				read0809 proc
+ 0034  BA 0200				mov dx,in0_0809
+ 0037  EC				in al,dx
+ 0038  C3				ret
+ 0039				read0809 endp
+
+ 0039				delay300ms proc
+ 0039  BB 001E				mov bx,30
+ 003C  E8 000C				call setTimer
+ 003F				again300ms:
+ 003F  E8 0019				call display
+ 0042  BA 0212				mov dx,pc_8255
+ 0045  EC				in al,dx
+ 0046  A8 02				test al,2
+ 0048  74 F5				jz again300ms
+ 004A  C3				ret
+ 004B				delay300ms endp
+
+ 004B				setTimer proc
+ 004B  BA 0263				mov dx,kz_8253
+ 004E  B0 30				mov al,00110000B
+ 0050  EE				out dx,al
+ 0051  BA 0260				mov dx,T0_8253
+ 0054  8B C3				mov ax,bx
+ 0056  EE				out dx,al
+ 0057  8A C4				mov al,ah
+ 0059  EE				out dx,al
+ 005A  C3				ret
+ 005B				setTimer endp
+
+ 005B				display proc
+ 005B  B3 10				mov bl,16
+ 005D  33 D2				xor dx,dx
+ 005F  33 C0				xor ax,ax
+ 0061  A0 0010 R			mov al,n
+ 0064  F6 F3				div bl
+ 0066  A2 0011 R			mov high_num,al
+ 0069  88 26 0012 R			mov low_num,ah
+ 006D  E8 0004				call writehigh
+ 0070  E8 0017				call writelow
+ 0073  C3				ret
+ 0074				display endp
+
+ 0074				writehigh proc
+ 0074  BA 0211				mov dx,pb_8255
+ 0077  BB 0000				mov bx,0
+ 007A  8A 1E 0011 R			mov bl,high_num
+ 007E  8A 87 0000 R			mov al,led[bx]
+ 0082  EE				out dx,al
+ 0083  BA 0212				mov dx,pc_8255
+ 0086  B0 80				mov al,10000000b
+ 0088  EE				out dx,al
+ 0089  C3				ret
+ 008A				writehigh endp
+
+ 008A				writelow proc
+ 008A  BA 0211				mov dx,pb_8255
+ 008D  BB 0000				mov bx,0
+ 0090  8A 1E 0012 R			mov bl,low_num
+ 0094  8A 87 0000 R			mov al,led[bx]
+ 0098  EE				out dx,al
+ 0099  BA 0212				mov dx,pc_8255
+ 009C  B0 40				mov al,01000000b
+ 009E  EE				out dx,al
+ 009F  C3				ret
+ 00A0				writelow endp
+
+ 00A0				code ends
+				end start 
+Microsoft (R) Macro Assembler Version 6.11		    11/02/23 14:40:38
+1.asm							     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 00A0	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 0013	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+check0809eoc . . . . . . . . . .	P Near	 0028	  code	Length= 000C Private
+delay300ms . . . . . . . . . . .	P Near	 0039	  code	Length= 0012 Private
+display  . . . . . . . . . . . .	P Near	 005B	  code	Length= 0019 Private
+init8255 . . . . . . . . . . . .	P Near	 001A	  code	Length= 0007 Private
+read0809 . . . . . . . . . . . .	P Near	 0034	  code	Length= 0005 Private
+setTimer . . . . . . . . . . . .	P Near	 004B	  code	Length= 0010 Private
+start0809  . . . . . . . . . . .	P Near	 0021	  code	Length= 0007 Private
+writehigh  . . . . . . . . . . .	P Near	 0074	  code	Length= 0016 Private
+writelow . . . . . . . . . . . .	P Near	 008A	  code	Length= 0016 Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+KZ_8253  . . . . . . . . . . . .	Number	 0263h	 
+T0_8253  . . . . . . . . . . . .	Number	 0260h	 
+again1 . . . . . . . . . . . . .	L Near	 0008	  code	
+again300ms . . . . . . . . . . .	L Near	 003F	  code	
+again  . . . . . . . . . . . . .	L Near	 0028	  code	
+ctr_8255 . . . . . . . . . . . .	Number	 0213h	 
+high_num . . . . . . . . . . . .	Byte	 0011	  data	
+in0_0809 . . . . . . . . . . . .	Number	 0200h	 
+led  . . . . . . . . . . . . . .	Byte	 0000	  data	
+low_num  . . . . . . . . . . . .	Byte	 0012	  data	
+n  . . . . . . . . . . . . . . .	Byte	 0010	  data	
+pa_8255  . . . . . . . . . . . .	Number	 0210h	 
+pb_8255  . . . . . . . . . . . .	Number	 0211h	 
+pc_8255  . . . . . . . . . . . .	Number	 0212h	 
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+
+	   1 Warnings
+	   0 Errors

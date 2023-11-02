@@ -1,0 +1,268 @@
+Microsoft (R) Macro Assembler Version 6.11		    11/02/23 17:29:56
+5.asm							     Page 1 - 1
+
+
+				;实验说明
+				;用中断方式实现倒计时60s， 并将剩余时间显示在数码管上
+
+				;8253.out1--IRQ
+				;8253.cs--290h
+				;8253.clk0--1MHZ
+				;8253.gate0--vcc
+				;8253.gate1--vcc
+				;8253.out0--8253.clk1
+				;8255.cs--280h
+				;8255.PA0~PA7---a~dp
+				;8255.pc0--s0
+				;8255.pc1--s1
+
+
+ = 0200				a0_M8259 equ 200h
+ = 0201				a1_M8259 equ 201h
+ = 0220				a0_s8259 equ 220h
+ = 0221				a1_s8259 equ 221h
+
+ = 0210				P8255_A equ 210h
+ = 0212				P8255_C equ 212h
+ = 0213				P8255_CTR equ 213h
+
+ = 0260				P8253_T0 equ 260h
+ = 0261				P8253_T1 equ 261h
+ = 0263				P8253_CTR equ 263h
+
+ 0000				data segment
+ 0000 3C				count db 60
+ 0001 3F 06 5B 4F 66 6D			digits db 3FH,06H,5BH,4FH,66H,6DH,7DH,07H,7FH,6FH
+       7D 07 7F 6F
+ 000B				data ends
+
+ 0000				code segment
+					assume cs:code,ds:data
+ 0000				start:
+ 0000  B8 ---- R			mov ax,data
+5.asm(37): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8				mov ds,ax
+ 0005  E8 0071				call init8255
+ 0008  E8 0011				call initm8259
+ 000B  E8 0024				call inits8259
+ 000E  FA				cli
+ 000F  E8 006F				call setIntVector
+ 0012  E8 00BF				call clearIR3Mask
+ 0015  FB				sti;开放中断
+ 0016				again:	
+ 0016  E8 002F				call dispalyTime
+ 0019  EB FB				jmp again;等待完成
+ 001B  F4				hlt
+					
+ 001C				initm8259 proc
+ 001C  BA 0200				mov dx,a0_M8259
+ 001F  B0 11				mov al,11H
+ 0021  EE				out dx,al
+					
+ 0022  BA 0201				mov dx,a1_M8259
+ 0025  B0 10				mov al,16
+ 0027  EE				out dx,al
+					
+ 0028  B0 80				mov al,80h
+ 002A  EE				out dx,al
+					
+ 002B  B0 01				mov al,01h
+ 002D  EE				out dx,al
+					
+ 002E  B0 FF				mov al,11111111B
+ 0030  EE				out dx,al
+					
+ 0031  C3				ret
+ 0032				initm8259 endp
+
+ 0032				inits8259 proc
+ 0032  BA 0220				mov dx,a0_s8259
+ 0035  B0 11				mov al,11H
+ 0037  EE				out dx,al
+					
+ 0038  BA 0221				mov dx,a1_s8259
+ 003B  B0 70				mov al,70h
+ 003D  EE				out dx,al
+					
+ 003E  B0 07				mov al,07h
+ 0040  EE				out dx,al
+					
+ 0041  B0 01				mov al,01h
+ 0043  EE				out dx,al
+					
+ 0044  B0 FF				mov al,11111111B
+ 0046  EE				out dx,al	
+ 0047  C3				ret
+ 0048				inits8259 endp
+
+ 0048				dispalyTime proc;ax =53
+ 0048  52				push dx
+ 0049  53				push bx
+ 004A  50				push ax
+
+ 004B  33 C0				xor ax,ax
+ 004D  A0 0000 R			mov al,count;ax = 53
+ 0050  B3 0A				mov bl,10
+ 0052  F6 F3				div bl;ah = 3, al =5
+ 0054  BB 0001 R			mov bx, offset digits
+
+ 0057  D7				xlat;al = 5 段码
+ 0058  BA 0210				mov dx,P8255_A
+ 005B  EE				out dx,al
+ 005C  BA 0212				mov dx,P8255_C
+ 005F  B0 02				mov al,00000010B;pc1
+ 0061  EE				out dx,al;左边数码管亮
+ 0062  B0 00				mov al,0
+ 0064  EE				out dx,al;左边数码管灭
+					
+ 0065  8A C4				mov al,ah
+ 0067  D7				xlat;al = 5 段码
+ 0068  BA 0210				mov dx,P8255_A
+ 006B  EE				out dx,al
+ 006C  BA 0212				mov dx,P8255_C
+ 006F  B0 01				mov al,00000001B;pc0
+ 0071  EE				out dx,al;右边数码管亮
+ 0072  B0 00				mov al,0
+ 0074  EE				out dx,al;右边数码管灭
+
+ 0075  58				pop ax
+ 0076  5B				pop bx
+ 0077  5A				pop dx
+ 0078  C3				ret
+ 0079				dispalyTime endp
+
+ 0079				init8255 proc
+ 0079  52				push dx
+ 007A  BA 0213				mov  dx,P8255_CTR
+ 007D  B0 80				mov  al,10000000B;A口輸出
+ 007F  EE				out  dx,al
+ 0080  5A				pop  dx
+ 0081				init8255 endp
+
+ 0081				setIntVector proc
+ 0081  50				push ax
+ 0082  52				push dx
+ 0083  1E				push ds
+ 0084  56				push si
+
+ 0085  33 C0				xor ax,ax
+ 0087  8E D8				mov ds,ax
+					
+ 0089  BE 0048				mov si,72
+ 008C  B8 009B R			mov ax,offset lightleds
+ 008F  89 04				mov [si],ax
+ 0091  8C C8				mov ax,cs
+ 0093  89 44 02				mov [si+2],ax
+					
+ 0096  5E				pop si
+ 0097  1F				pop ds
+ 0098  5A				pop dx
+ 0099  58				pop ax
+ 009A  C3				ret
+ 009B				setIntVector endp
+
+ 009B				lightleds proc
+ 009B  1E				 push ds;
+ 009C  50				 push ax
+ 009D  53				 push bx
+ 009E  52				 push dx
+ 009F  FB				 sti
+ 00A0  B8 ---- R			 mov ax,data
+ 00A3  8E D8				 mov ds,ax
+
+ 00A5  A0 0000 R			 mov al,count
+ 00A8  BB 0001 R			 mov bx,offset digits
+ 00AB  D7				 xlat;
+ 00AC  BA 0210				 mov dx,P8255_A
+ 00AF  EE				 out dx,al
+ 00B0  FE 06 0000 R			 inc count
+ 00B4  80 3E 0000 R 09			 cmp count,9
+ 00B9  7E 05				 jle next
+ 00BB  C6 06 0000 R 00			 mov count,0
+
+ 00C0  FA			next:	cli;关中断
+ 00C1  E8 0005				call send8259EOI
+ 00C4  5A				pop dx
+ 00C5  5B				pop bx
+ 00C6  58				pop ax
+ 00C7  1F				pop ds
+ 00C8  CF				iret;中断返回
+ 00C9				lightleds endp
+
+ 00C9				send8259EOI proc
+ 00C9  50				push ax
+ 00CA  52				push dx
+
+ 00CB  BA 0200				mov dx,a0_M8259
+ 00CE  B0 20				mov al,00100000B;OCW2=0010 0000
+ 00D0  EE				out dx,al;向8259发送中断结束的命令
+
+ 00D1  5A				pop dx
+ 00D2  58				pop ax
+ 00D3  C3				ret
+ 00D4				send8259EOI endp
+
+ 00D4				clearIR3Mask proc
+ 00D4  52				push dx
+
+ 00D5  BA 0201				mov dx,A1_M8259
+ 00D8  EC				in al,dx
+ 00D9  24 FA				and al,11111010B;OCW1
+ 00DB  EE				out dx,al;清除IR3的屏蔽位
+
+ 00DC  5A				pop dx
+ 00DD  C3				ret
+ 00DE				clearIR3Mask endp
+
+ 00DE				code ends
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    11/02/23 17:29:56
+5.asm							     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+code . . . . . . . . . . . . . .	16 Bit	 00DE	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 000B	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+clearIR3Mask . . . . . . . . . .	P Near	 00D4	  code	Length= 000A Private
+dispalyTime  . . . . . . . . . .	P Near	 0048	  code	Length= 0031 Private
+init8255 . . . . . . . . . . . .	P Near	 0079	  code	Length= 0008 Private
+initm8259  . . . . . . . . . . .	P Near	 001C	  code	Length= 0016 Private
+inits8259  . . . . . . . . . . .	P Near	 0032	  code	Length= 0016 Private
+lightleds  . . . . . . . . . . .	P Near	 009B	  code	Length= 002E Private
+send8259EOI  . . . . . . . . . .	P Near	 00C9	  code	Length= 000B Private
+setIntVector . . . . . . . . . .	P Near	 0081	  code	Length= 001A Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+P8253_CTR  . . . . . . . . . . .	Number	 0263h	 
+P8253_T0 . . . . . . . . . . . .	Number	 0260h	 
+P8253_T1 . . . . . . . . . . . .	Number	 0261h	 
+P8255_A  . . . . . . . . . . . .	Number	 0210h	 
+P8255_CTR  . . . . . . . . . . .	Number	 0213h	 
+P8255_C  . . . . . . . . . . . .	Number	 0212h	 
+a0_M8259 . . . . . . . . . . . .	Number	 0200h	 
+a0_s8259 . . . . . . . . . . . .	Number	 0220h	 
+a1_M8259 . . . . . . . . . . . .	Number	 0201h	 
+a1_s8259 . . . . . . . . . . . .	Number	 0221h	 
+again  . . . . . . . . . . . . .	L Near	 0016	  code	
+count  . . . . . . . . . . . . .	Byte	 0000	  data	
+digits . . . . . . . . . . . . .	Byte	 0001	  data	
+next . . . . . . . . . . . . . .	L Near	 00C0	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+
+	   1 Warnings
+	   0 Errors

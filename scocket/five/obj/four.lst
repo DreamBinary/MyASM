@@ -1,0 +1,291 @@
+Microsoft (R) Macro Assembler Version 6.11		    11/02/23 17:35:25
+four.asm						     Page 1 - 1
+
+
+				;**************************************
+				;*           循环计数60              *
+				;* 设计方案2的代码，该方案能在实验箱  *
+				;* 上实现                             *
+				;* coded by NYT   2023.9.20
+				;**************************************。
+				;主片8259端口 230H-231H，从片8259端口 240H-241H
+
+				.model small 
+				.486
+				;;cs3--m8259.cs
+				;;cs4--s8259.cs
+				;;cs0--8255.cs
+
+ = 0263				in3_0809  equ  263h
+ = 0230				A0_M8259  equ  230h
+ = 0231				A1_M8259  equ  231h
+ = 0240				A0_S8259  equ  240h  
+ = 0241				A1_S8259  equ  241h 
+ = 0200				PA_8255   equ   200h
+ = 0201				PB_8255   equ   201h
+ = 0202				PC_8255   equ   202h
+ = 0203				CTR_8255  equ   203h
+
+ 0000				DATA SEGMENT
+
+ 0000 3F 06 5B 4F 66 6D		leds DB 3FH,06H,5BH,4FH,66H,6DH,7DH,07H,7FH,67H
+       7D 07 7F 67
+ 000A  77 7C 39 5E 79 71			DB 77H,7CH,39H,5EH,79H,71H
+ 0010 00			n db 0
+ 0011 00			d0      db 0
+ 0012 00			d1      db 0
+ 0013				DATA ENDS
+
+ 0000				code segment
+				       assume cs:code,ds:data
+ 0000				start: 
+ 0000  B8 ---- R		       mov ax,data
+four.asm(37): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8			       mov ds,ax
+				       
+ 0005  E8 002C			       call Init8255
+ 0008  E8 0030			       call InitM8259
+ 000B  E8 0043			       call InitS8259
+ 000E  FA			       cli
+ 000F  E8 0055			       call SetINTVector
+ 0012  E8 006B			       call cleanM8259IR0Mask
+ 0015  FB			       sti
+ 0016				 again:  
+ 0016  E8 0093			 	   call dispNumber
+ 0019  EB FB			 	   jmp  again
+				                   
+ 001B				intHander_1s  proc  far    ;中断程序 
+ 001B  E8 006A			       call start0809 
+ 001E  E8 007E			       call check0809Eoc
+ 0021  E8 006F			       call read0809
+ 0024  E8 0002			       call sendM8259EOI
+ 0027  FB			       sti
+ 0028  CF			       iret
+ 0029				intHander_1s  endp
+
+ 0029				sendM8259EOI proc
+ 0029  50				   push ax
+ 002A  52				   push dx
+ 002B  B0 20			       mov al,20h
+ 002D  BA 0230			       mov dx, A0_M8259   ;中断结束命令   
+ 0030  EE			       out dx, al
+ 0031  5A			       pop dx
+ 0032  58			       pop ax
+ 0033  C3			       ret
+ 0034				sendM8259EOI endp 
+
+ 0034				Init8255 proc
+ 0034  BA 0203			       mov dx, CTR_8255
+ 0037  B0 81			       mov al,10000001b;
+ 0039  EE			       out dx, al
+ 003A  C3			       ret
+ 003B				Init8255 endp
+
+ 003B				InitM8259 proc
+ 003B  BA 0230			       MOV DX, A0_M8259     ; 主片8259 ICW1
+ 003E  B0 11			       MOV AL, 11H
+ 0040  EE			       OUT dx, AL
+				       
+ 0041  BA 0231			       MOV DX, A1_M8259     ; 8259 ICW2
+ 0044  B0 10			       MOV AL, 16       ; VECTOR START NUM =10H(IR0)  
+ 0046  EE			       OUT dx, AL
+				      
+ 0047  B0 80			       MOV AL,10000000B  ;8259 ICW3
+ 0049  EE			       OUT dx,AL
+				       
+ 004A  B0 01			       MOV AL,01H       ;8259 ICW4
+ 004C  EE			       OUT dx,AL
+				      
+ 004D  B0 FF			       MOV AL,  11111111B    ;8259 MASK WORD
+ 004F  EE			       OUT DX, AL
+ 0050  C3			       ret
+ 0051				InitM8259 endp
+
+ 0051				InitS8259 proc
+				      
+ 0051  BA 0240			       MOV DX,A0_S8259    ;SLAVE 8259 ICW1
+ 0054  B0 11			       MOV AL,11H
+ 0056  EE			       OUT dx,AL 
+
+ 0057  BA 0241			       MOV DX, A1_S8259    ; 8259 ICW2
+ 005A  B0 70			       MOV AL, 70H            ; VECTOR START NUM =70H(从片IR0)
+ 005C  EE			       OUT dx, AL
+				     
+ 005D  B0 07			       MOV AL,07             ;8259 ICW3
+ 005F  EE			       OUT dx,AL
+				       
+ 0060  B0 01			       MOV AL,01H           ;8259 ICW4
+ 0062  EE			       OUT dx,AL
+				      
+ 0063  B0 FF			       MOV AL,  11111111B    ;8259 MASK WORD
+ 0065  EE			       OUT DX, AL 
+ 0066  C3			       ret
+ 0067				InitS8259    endp
+
+ 0067				SetINTVector proc
+ 0067  1E			       push ds
+ 0068  50			       push ax
+ 0069  52			       push dx   
+				       
+ 006A  B8 0000				   mov ax, 0
+ 006D  8E D8			       mov ds, ax
+				 
+ 006F  BE 0040			       mov si,64
+ 0072  B8 001B R		       mov ax, offset intHander_1s
+ 0075  89 04			       mov [si],ax       
+ 0077  8C C8			       mov ax,cs
+ 0079  89 44 02			       mov [si+2],ax
+				       ;;;      
+ 007C  5A			       pop dx
+ 007D  58			       pop ax 
+ 007E  1F			       pop ds 
+				       
+ 007F  C3			       ret 
+ 0080				SetINTVector endp  
+
+ 0080				cleanM8259IR0Mask proc
+ 0080  BA 0231			       mov dx, A1_M8259        
+ 0083  EC			       in  al, dx
+ 0084  24 FE			       and al, 11111110B         
+ 0086  EE			       out dx, al
+ 0087  C3			       ret
+ 0088				cleanM8259IR0Mask endp
+
+ 0088				start0809 proc
+ 0088  50				push ax
+ 0089  52				push dx
+ 008A  B0 00				mov al, 0
+ 008C  BA 0263				mov dx, in3_0809
+ 008F  EE				out dx, al
+ 0090  5A				pop dx
+ 0091  58				pop ax
+ 0092  C3				ret
+ 0093				start0809 endp
+
+ 0093				read0809 proc
+ 0093  52				push dx
+ 0094  50				push ax
+ 0095  BA 0263				mov dx, in3_0809
+ 0098  EC				in al, dx
+ 0099  A2 0010 R			mov n, al
+ 009C  58				pop ax
+ 009D  5A				pop dx
+ 009E  C3				ret
+ 009F				read0809 endp
+
+ 009F				check0809Eoc proc
+ 009F  50				push ax
+ 00A0  52				push dx
+ 00A1  BA 0202				mov dx, pc_8255
+ 00A4				ag_check:
+ 00A4  EC				in al, dx
+ 00A5  A8 01				test al, 01h
+ 00A7  74 FB				jz ag_check
+ 00A9  5A				pop dx
+ 00AA  58				pop ax
+ 00AB  C3				ret
+ 00AC				check0809Eoc endp
+
+ 00AC				dispNumber proc
+ 00AC  33 C0			 	xor ax,ax	
+				  	
+ 00AE  A0 0010 R		  	mov al, n
+ 00B1  C0 E0 04				shl al, 4
+ 00B4  C0 E8 04				shr al, 4
+ 00B7  A2 0011 R			mov d0, al
+					
+ 00BA  A0 0010 R			mov al,n
+ 00BD  C0 E8 04				shr al, 4
+ 00C0  A2 0012 R			mov d1, al
+				  	
+ 00C3  A0 0011 R			mov al,d0
+ 00C6  BB 0000 R			mov bx,offset leds
+ 00C9  D7				xlat  
+ 00CA  BA 0200				mov dx,PA_8255
+ 00CD  EE				out dx,al
+ 00CE  B0 40				mov al,01000000B
+ 00D0  BA 0202				mov dx,PC_8255
+ 00D3  EE				out dx,al
+ 00D4  B0 00				mov al,0
+ 00D6  EE				out dx,al
+					
+ 00D7  A0 0012 R			mov al,d1
+ 00DA  BB 0000 R			mov bx,offset leds
+ 00DD  D7				xlat 
+ 00DE  BA 0200				mov dx,PA_8255
+ 00E1  EE				out dx,al
+ 00E2  B0 80				mov al,10000000B
+ 00E4  BA 0202				mov dx,PC_8255
+ 00E7  EE				out dx,al
+ 00E8  B0 00				mov al,0
+ 00EA  EE				out dx,al
+ 00EB  C3				ret 
+ 00EC				dispNumber endp 
+ 00EC				code ends
+				end   start
+Microsoft (R) Macro Assembler Version 6.11		    11/02/23 17:35:25
+four.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DATA . . . . . . . . . . . . . .	16 Bit	 0013	  Para	  Private 
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 00EC	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+Init8255 . . . . . . . . . . . .	P Near	 0034	  code	Length= 0007 Private
+InitM8259  . . . . . . . . . . .	P Near	 003B	  code	Length= 0016 Private
+InitS8259  . . . . . . . . . . .	P Near	 0051	  code	Length= 0016 Private
+SetINTVector . . . . . . . . . .	P Near	 0067	  code	Length= 0019 Private
+check0809Eoc . . . . . . . . . .	P Near	 009F	  code	Length= 000D Private
+cleanM8259IR0Mask  . . . . . . .	P Near	 0080	  code	Length= 0008 Private
+dispNumber . . . . . . . . . . .	P Near	 00AC	  code	Length= 0040 Private
+intHander_1s . . . . . . . . . .	P Far	 001B	  code	Length= 000E Private
+read0809 . . . . . . . . . . . .	P Near	 0093	  code	Length= 000C Private
+sendM8259EOI . . . . . . . . . .	P Near	 0029	  code	Length= 000B Private
+start0809  . . . . . . . . . . .	P Near	 0088	  code	Length= 000B Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+A0_M8259 . . . . . . . . . . . .	Number	 0230h	 
+A0_S8259 . . . . . . . . . . . .	Number	 0240h	 
+A1_M8259 . . . . . . . . . . . .	Number	 0231h	 
+A1_S8259 . . . . . . . . . . . .	Number	 0241h	 
+CTR_8255 . . . . . . . . . . . .	Number	 0203h	 
+PA_8255  . . . . . . . . . . . .	Number	 0200h	 
+PB_8255  . . . . . . . . . . . .	Number	 0201h	 
+PC_8255  . . . . . . . . . . . .	Number	 0202h	 
+ag_check . . . . . . . . . . . .	L Near	 00A4	  code	
+again  . . . . . . . . . . . . .	L Near	 0016	  code	
+d0 . . . . . . . . . . . . . . .	Byte	 0011	  DATA	
+d1 . . . . . . . . . . . . . . .	Byte	 0012	  DATA	
+in3_0809 . . . . . . . . . . . .	Number	 0263h	 
+leds . . . . . . . . . . . . . .	Byte	 0000	  DATA	
+n  . . . . . . . . . . . . . . .	Byte	 0010	  DATA	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+
+	   1 Warnings
+	   0 Errors

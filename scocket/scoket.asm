@@ -58,7 +58,7 @@ init8253 proc
     out dx, al
 
     mov dx, port_8253_T0
-    mov al, 1000 ; cnt
+    mov ax, 1000 ; cnt
     out dx, al
     mov al, ah
     out dx, al
@@ -73,7 +73,7 @@ init8259 proc
     mov dx, port_8259_A_1
     mov al, 00111000b ;icw2
     out dx, al
-    mov al, port_8259_A_1
+    mov dx, port_8259_A_1
     mov al, 00000001b ;icw4
     out dx, al
     pop dx

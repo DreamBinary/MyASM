@@ -1,0 +1,155 @@
+Microsoft (R) Macro Assembler Version 6.11		    11/02/23 15:32:54
+3.asm							     Page 1 - 1
+
+
+				;实验说明
+				;该系统用单脉冲作为中断请求信号， 收到一个中断请求， 系统在数码管上循环显示数字0,1, .. 9。
+
+				;ppluse--IRQ
+				;8255.cs--280h
+				;8255.PA0~PA7---数码管a~dp
+				;左位码--GROUND
+				;右位码--VCC
+
+ = 0200				P8259_A0 equ 200h
+ = 0201				P8259_A1 equ 201h
+ = 0210				P8255_A equ 210h
+ = 0213				P8255_CTR equ 213h
+
+ 0000				data segment
+ 0000 00				count db 0
+ 0001 3F 06 5B 4F 66 6D			digits db 3FH,06H,5BH,4FH,66H,6DH,7DH,07H,7FH,6FH
+       7D 07 7F 6F
+ 000B				data ends
+
+ 0000				code segment
+					assume cs:code,ds:data
+ 0000				start:
+ 0000  B8 ---- R			mov ax,data
+3.asm(23): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8				mov ds,ax
+ 0005  E8 000B				call init8255
+ 0008  E8 0010				call setIntVector
+ 000B  E8 0061				call clearIR3Mask
+ 000E  FB				sti;开放中断
+ 000F  F4			again:	hlt
+ 0010  EB FD				jmp again;等待完成
+ 0012  F4				hlt
+ 0013				init8255 proc
+ 0013  52				push dx
+ 0014  BA 0213				mov  dx,P8255_CTR
+ 0017  B0 80				mov  al,10000000B;A口输出
+ 0019  EE				out  dx,al
+ 001A  5A				pop  dx
+ 001B				init8255 endp
+
+ 001B				setIntVector proc
+ 001B  50				push ax
+ 001C  52				push dx
+ 001D  1E				push ds
+ 001E  56				push si
+ 001F  33 C0				xor ax,ax
+ 0021  8E D8				mov ds,ax
+ 0023  B8 ---- R			mov ax,seg lightleds
+ 0026  BE 002E				mov si,46
+ 0029  89 04				mov word ptr[si],ax
+ 002B  B8 0038 R			mov ax,offset lightleds
+ 002E  BE 002C				mov si,44
+ 0031  89 04				mov word ptr[si],ax
+ 0033  5E				pop si
+ 0034  1F				pop ds
+ 0035  5A				pop dx
+ 0036  58				pop ax
+ 0037  C3				ret
+ 0038				setIntVector endp
+
+ 0038				lightleds proc
+ 0038  1E				 push ds;
+ 0039  50				 push ax
+ 003A  53				 push bx
+ 003B  52				 push dx
+ 003C  FB				 sti
+ 003D  B8 ---- R			 mov ax,data
+ 0040  8E D8				 mov ds,ax
+
+ 0042  A0 0000 R			 mov al,count
+ 0045  BB 0001 R			 mov bx,offset digits
+ 0048  D7				 xlat;
+ 0049  BA 0210				 mov dx,P8255_A
+ 004C  EE				 out dx,al
+ 004D  FE 06 0000 R			 inc count
+ 0051  80 3E 0000 R 09			 cmp count,9
+ 0056  7E 05				 jle next
+ 0058  C6 06 0000 R 00			 mov count,0
+
+ 005D  FA			next:	cli;关中断
+ 005E  E8 0005				call send8259EOI
+ 0061  5A				pop dx
+ 0062  5B				pop bx
+ 0063  58				pop ax
+ 0064  1F				pop ds
+ 0065  CF				iret;中断返回
+ 0066				lightleds endp
+
+ 0066				send8259EOI proc
+ 0066  52				push dx
+ 0067  BA 0200				mov dx,P8259_A0
+ 006A  B0 20				mov al,00100000B;OCW2=0010 0000
+ 006C  EE				out dx,al;向8259发送中断结束的命令
+ 006D  5A				pop dx
+ 006E  C3				ret
+ 006F				send8259EOI endp
+
+ 006F				clearIR3Mask proc
+ 006F  52				push dx
+ 0070  BA 0201				mov dx,P8259_A1
+ 0073  EC				in al,dx
+ 0074  24 F7				and al,11110111B;OCW1
+ 0076  EE				out dx,al;清除IR3的屏蔽位
+ 0077  5A				pop dx
+ 0078  C3				ret
+ 0079				clearIR3Mask endp
+
+ 0079				code ends
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    11/02/23 15:32:54
+3.asm							     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+code . . . . . . . . . . . . . .	16 Bit	 0079	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 000B	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+clearIR3Mask . . . . . . . . . .	P Near	 006F	  code	Length= 000A Private
+init8255 . . . . . . . . . . . .	P Near	 0013	  code	Length= 0008 Private
+lightleds  . . . . . . . . . . .	P Near	 0038	  code	Length= 002E Private
+send8259EOI  . . . . . . . . . .	P Near	 0066	  code	Length= 0009 Private
+setIntVector . . . . . . . . . .	P Near	 001B	  code	Length= 001D Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+P8255_A  . . . . . . . . . . . .	Number	 0210h	 
+P8255_CTR  . . . . . . . . . . .	Number	 0213h	 
+P8259_A0 . . . . . . . . . . . .	Number	 0200h	 
+P8259_A1 . . . . . . . . . . . .	Number	 0201h	 
+again  . . . . . . . . . . . . .	L Near	 000F	  code	
+count  . . . . . . . . . . . . .	Byte	 0000	  data	
+digits . . . . . . . . . . . . .	Byte	 0001	  data	
+next . . . . . . . . . . . . . .	L Near	 005D	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+
+	   1 Warnings
+	   0 Errors

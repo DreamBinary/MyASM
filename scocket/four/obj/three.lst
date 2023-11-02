@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 6.11		    10/26/23 17:47:18
+Microsoft (R) Macro Assembler Version 6.11		    11/02/23 15:18:40
 three.asm						     Page 1 - 1
 
 
@@ -11,7 +11,7 @@ three.asm						     Page 1 - 1
  = 0273				tkz equ 273h
 
 
- = 0202				in3_0809 equ 202h
+ = 0203				in3_0809 equ 203h
  = 0210				pa_8255 equ 210h
  = 0211				pb_8255 equ 211h
  = 0212				pc_8255 equ 212h
@@ -43,125 +43,109 @@ three.asm						     Page 1 - 1
  0000  B8 ---- R		    mov ax, data  ;; if use data
 three.asm(38): warning A4012: line number information for segment without class 'CODE' : code
  0003  8E D8			    mov ds, ax
- 0005  E8 0017			    call init8255
+ 0005  E8 0012			    call init8255
  0008				again:
- 0008  E8 001B			    call start0809
- 000B  E8 001D			    call check0809Eoc
- 000E  E8 0023			   	call read0809
-				   	
+ 0008  E8 0016			    call start0809 
+ 000B  E8 001A			    call check0809Eoc
+ 000E  E8 0020			   	call read0809
  0011  A2 0010 R			mov n, al
 					
- 0014  B9 03E8				mov cx, 1000
- 0017				lp:
- 0017  E2 FE				loop lp
 					
- 0019  E8 001D			   	call delay
-				   ; call display
+ 0014  E8 001F			   	call delay
 				    
- 001C  EB EA				jmp again
- 001E  F4			  	hlt
+ 0017  EB EF				jmp again
+ 0019  F4			  	hlt
 
- 001F				init8255 proc
- 001F  BA 0213				mov dx, kz_8255
- 0022  B0 81				mov al,10000001b;
- 0024  EE				out dx, al
- 0025  C3				ret
- 0026				init8255 endp
+ 001A				init8255 proc
+ 001A  BA 0213				mov dx, kz_8255
+ 001D  B0 81				mov al,10000001b;
+ 001F  EE				out dx, al
+ 0020  C3				ret
+ 0021				init8255 endp
 
- 0026				start0809 proc
- 0026  BA 0202				mov dx, in3_0809
- 0029  EE				out dx, al
- 002A  C3				ret
- 002B				start0809 endp
+ 0021				start0809 proc
+ 0021  B0 03				mov al, 3
+ 0023  BA 0203				mov dx, in3_0809
+ 0026  EE				out dx, al
+ 0027  C3				ret
+ 0028				start0809 endp
 
- 002B				check0809Eoc proc
- 002B  BA 0212				mov dx, pc_8255
- 002E				ag_check:
- 002E  EC				in al, dx
- 002F  A8 01				test al, 01h
- 0031  74 FB				jz ag_check
- 0033  C3				ret
- 0034				check0809Eoc endp
+ 0028				check0809Eoc proc
+ 0028  BA 0212				mov dx, pc_8255
+ 002B				ag_check:
+ 002B  EC				in al, dx
+ 002C  A8 01				test al, 01h
+ 002E  74 FB				jz ag_check
+ 0030  C3				ret
+ 0031				check0809Eoc endp
 
- 0034				read0809 proc
- 0034  BA 0202				mov dx, in3_0809
- 0037  EC				in al, dx
- 0038  C3				ret
- 0039				read0809 endp
+ 0031				read0809 proc
+ 0031  BA 0203				mov dx, in3_0809
+ 0034  EC				in al, dx
+ 0035  C3				ret
+ 0036				read0809 endp
 
- 0039				delay proc
-					
- 0039  A0 0010 R			mov al, n
- 003C  C0 E0 04				shl al, 4
- 003F  C0 E8 04				shr al, 4
- 0042  A2 0012 R			mov d0, al
-					
- 0045  A0 0010 R			mov al,n
- 0048  C0 E8 04				shr al, 4
- 004B  A2 0011 R			mov d1, al
- 004E  B9 7530				mov cx, 30000
- 0051				agde:
- 0051  E8 0012				call display
- 0054  E2 FB				loop agde
- 0056				delay endp
-
-				;delay proc
-				;	mov bx, 10
-				;	call setTimer ;; mode = 0
-				;again3s:
-				;	call display
-
-				;	mov dx, pc_8255
-				;	in al, dx
-				;	test al, 01h
-				;	jz again3s
-					;ret
-				;delay endp
+ 0036				delay proc
+ 0036  B9 03E8				mov cx, 1000
+ 0039				agains:
+ 0039  E8 0013				call display
+ 003C  E2 FB				loop agains
+ 003E  C3				ret
+ 003F				delay endp
 				  	
- 0056				setTimer proc
- 0056  BA 0273				mov dx, tkz
- 0059  B0 30				mov al, 00110000b
- 005B  EE				out dx, al
- 005C  8B C3				mov ax, bx
- 005E  BA 0270				mov dx, t0
- 0061  EE				out dx, al
- 0062  8A C4				mov al, ah
- 0064  EE				out dx, al
- 0065  C3				ret
- 0066				setTimer endp
+ 003F				setTimer proc
+ 003F  BA 0273				mov dx, tkz
+ 0042  B0 30				mov al, 00110000b
+ 0044  EE				out dx, al
+ 0045  8B C3				mov ax, bx
+ 0047  BA 0270				mov dx, t0
+ 004A  EE				out dx, al
+ 004B  8A C4				mov al, ah
+ 004D  EE				out dx, al
+ 004E  C3				ret
+ 004F				setTimer endp
 
 
- 0066				display proc
- 0066  33 C0			  	xor ax,ax	
+ 004F				display proc
+ 004F  33 C0			  	xor ax,ax	
 				  	
- 0068  A0 0012 R			mov al,d0
- 006B  BB 0000 R			mov bx,offset leds
- 006E  D7				xlat  
- 006F  BA 0210				mov dx,pa_8255
- 0072  EE				out dx,al
- 0073  B0 40				mov al,01000000B
- 0075  BA 0212				mov dx,pc_8255
- 0078  EE				out dx,al
- 0079  B0 00				mov al,0
- 007B  EE				out dx,al
+ 0051  A0 0010 R		  	mov al, n
+ 0054  C0 E0 04				shl al, 4
+ 0057  C0 E8 04				shr al, 4
+ 005A  A2 0012 R			mov d0, al
 					
- 007C  A0 0011 R			mov al,d1
- 007F  BB 0000 R			mov bx,offset leds
- 0082  D7				xlat 
- 0083  BA 0210				mov dx,pa_8255
- 0086  EE				out dx,al
- 0087  B0 80				mov al,10000000B
- 0089  BA 0212				mov dx,pc_8255
- 008C  EE				out dx,al
- 008D  B0 00				mov al,0
- 008F  EE				out dx,al
- 0090  C3				ret 
- 0091				display endp 
+ 005D  A0 0010 R			mov al,n
+ 0060  C0 E8 04				shr al, 4
+ 0063  A2 0011 R			mov d1, al
+				  	
+ 0066  A0 0012 R			mov al,d0
+ 0069  BB 0000 R			mov bx,offset leds
+ 006C  D7				xlat  
+ 006D  BA 0210				mov dx,pa_8255
+ 0070  EE				out dx,al
+ 0071  B0 40				mov al,01000000B
+ 0073  BA 0212				mov dx,pc_8255
+ 0076  EE				out dx,al
+ 0077  B0 00				mov al,0
+ 0079  EE				out dx,al
+					
+ 007A  A0 0011 R			mov al,d1
+ 007D  BB 0000 R			mov bx,offset leds
+ 0080  D7				xlat 
+ 0081  BA 0210				mov dx,pa_8255
+ 0084  EE				out dx,al
+ 0085  B0 80				mov al,10000000B
+ 0087  BA 0212				mov dx,pc_8255
+ 008A  EE				out dx,al
+ 008B  B0 00				mov al,0
+ 008D  EE				out dx,al
+ 008E  C3				ret 
+ 008F				display endp 
 
 
- 0091				code ends
+ 008F				code ends
 				end start
-Microsoft (R) Macro Assembler Version 6.11		    10/26/23 17:47:18
+Microsoft (R) Macro Assembler Version 6.11		    11/02/23 15:18:40
 three.asm						     Symbols 2 - 1
 
 
@@ -174,7 +158,7 @@ Segments and Groups:
 DGROUP . . . . . . . . . . . . .	GROUP
 _DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
 _TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
-code . . . . . . . . . . . . . .	16 Bit	 0091	  Para	  Private 
+code . . . . . . . . . . . . . .	16 Bit	 008F	  Para	  Private 
 data . . . . . . . . . . . . . .	16 Bit	 0013	  Para	  Private 
 
 
@@ -182,13 +166,13 @@ Procedures,  parameters and locals:
 
                 N a m e                 Type     Value    Attr
 
-check0809Eoc . . . . . . . . . .	P Near	 002B	  code	Length= 0009 Private
-delay  . . . . . . . . . . . . .	P Near	 0039	  code	Length= 001D Private
-display  . . . . . . . . . . . .	P Near	 0066	  code	Length= 002B Private
-init8255 . . . . . . . . . . . .	P Near	 001F	  code	Length= 0007 Private
-read0809 . . . . . . . . . . . .	P Near	 0034	  code	Length= 0005 Private
-setTimer . . . . . . . . . . . .	P Near	 0056	  code	Length= 0010 Private
-start0809  . . . . . . . . . . .	P Near	 0026	  code	Length= 0005 Private
+check0809Eoc . . . . . . . . . .	P Near	 0028	  code	Length= 0009 Private
+delay  . . . . . . . . . . . . .	P Near	 0036	  code	Length= 0009 Private
+display  . . . . . . . . . . . .	P Near	 004F	  code	Length= 0040 Private
+init8255 . . . . . . . . . . . .	P Near	 001A	  code	Length= 0007 Private
+read0809 . . . . . . . . . . . .	P Near	 0031	  code	Length= 0005 Private
+setTimer . . . . . . . . . . . .	P Near	 003F	  code	Length= 0010 Private
+start0809  . . . . . . . . . . .	P Near	 0021	  code	Length= 0007 Private
 
 
 Symbols:
@@ -204,15 +188,14 @@ Symbols:
 @fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
 @fardata . . . . . . . . . . . .	Text   	 FAR_DATA
 @stack . . . . . . . . . . . . .	Text   	 DGROUP
-ag_check . . . . . . . . . . . .	L Near	 002E	  code	
+ag_check . . . . . . . . . . . .	L Near	 002B	  code	
+agains . . . . . . . . . . . . .	L Near	 0039	  code	
 again  . . . . . . . . . . . . .	L Near	 0008	  code	
-agde . . . . . . . . . . . . . .	L Near	 0051	  code	
 d0 . . . . . . . . . . . . . . .	Byte	 0012	  data	
 d1 . . . . . . . . . . . . . . .	Byte	 0011	  data	
-in3_0809 . . . . . . . . . . . .	Number	 0202h	 
+in3_0809 . . . . . . . . . . . .	Number	 0203h	 
 kz_8255  . . . . . . . . . . . .	Number	 0213h	 
 leds . . . . . . . . . . . . . .	Byte	 0000	  data	
-lp . . . . . . . . . . . . . . .	L Near	 0017	  code	
 n  . . . . . . . . . . . . . . .	Byte	 0010	  data	
 pa_8255  . . . . . . . . . . . .	Number	 0210h	 
 pb_8255  . . . . . . . . . . . .	Number	 0211h	 

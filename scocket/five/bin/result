@@ -1,10 +1,10 @@
 Microsoft (R) MASM Compatibility Driver
 Copyright (C) Microsoft Corp 1993.  All rights reserved.
 
- Invoking: ML.EXE /I. /Zm /c /Zd /Fl /Fo..\obj\five.obj /Fl..\obj\five.lst /Ta five.asm 
+ Invoking: ML.EXE /I. /Zm /c /Zd /Fl /Fo..\obj\four.obj /Fl..\obj\four.lst /Ta four.asm 
 
- Assembling: five.asm
-five.asm(38): warning A4012: line number information for segment without class 'CODE' : code
+ Assembling: four.asm
+four.asm(37): warning A4012: line number information for segment without class 'CODE' : code
 
 Microsoft (R) Segmented Executable Linker  Version 5.60.339 Dec  5 1994
 Copyright (C) Microsoft Corp 1984-1993.  All rights reserved.

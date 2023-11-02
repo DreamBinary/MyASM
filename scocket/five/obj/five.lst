@@ -1,0 +1,259 @@
+Microsoft (R) Macro Assembler Version 6.11		    11/02/23 17:22:29
+five.asm						     Page 1 - 1
+
+
+				;**************************************
+				;*           循环计数60              *
+				;* 设计方案2的代码，该方案能在实验箱  *
+				;* 上实现                             *
+				;* coded by NYT   2023.9.20
+				;**************************************。
+				;主片8259端口 230H-231H，从片8259端口 240H-241H
+
+				.model small 
+				.486
+				;;cs3--m8259.cs
+				;;cs4--s8259.cs
+				;;cs0--8255.cs
+ = 0230				A0_M8259  equ  230h
+ = 0231				A1_M8259  equ  231h
+ = 0240				A0_S8259  equ  240h  
+ = 0241				A1_S8259  equ  241h 
+ = 0200				PA_8255   equ   200h
+ = 0201				PB_8255    equ   201h
+ = 0202				PC_8255   equ   202h
+ = 0203				CTR_8255  equ   203h
+
+ 0000				DATA SEGMENT
+
+ 0000 3F 06 5B 4F 66 6D		LEDCODE DB 3FH,06H,5BH,4FH,66H,6DH,7DH
+       7D
+ 0007  07 7F 67					DB 07H,7FH,67H 
+ 000A 00			counter db 0
+ 000B 00			d0      db 0
+ 000C 00			d1      db 0
+ 000D				DATA ENDS
+
+ 0000				code segment
+				       assume cs:code,ds:data
+ 0000				start: 
+ 0000  B8 ---- R		       mov ax,data
+five.asm(35): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8			       mov ds,ax
+				       
+ 0005  E8 0023			       call Init8255
+ 0008  E8 0027			       call InitM8259
+				       ;call InitS8259
+ 000B  FA			       cli
+ 000C  E8 004F			       call SetINTVector
+ 000F  E8 0065			       call cleanM8259IR0Mask
+ 0012  FB			       sti
+ 0013				 again:  
+ 0013  E8 007F			 	   call dispNumber
+ 0016  EB FB			 	   jmp  again
+				                   
+ 0018				intHander_1s  proc  far    ;中断程序 
+ 0018  E8 0064			       call addCounter
+ 001B  E8 0002			       call sendM8259EOI
+ 001E  FB			       sti
+ 001F  CF			       iret
+ 0020				intHander_1s  endp
+
+ 0020				sendM8259EOI proc
+ 0020  50				   push ax
+ 0021  52				   push dx
+ 0022  B0 20			       mov al,20h
+ 0024  BA 0230			       mov dx, A0_M8259   ;中断结束命令   
+ 0027  EE			       out dx, al
+ 0028  5A			       pop dx
+ 0029  58			       pop ax
+ 002A  C3			       ret
+ 002B				sendM8259EOI endp 
+
+ 002B				Init8255 proc
+ 002B  BA 0203			       mov dx, CTR_8255
+ 002E  B0 80			       mov al, 80h;10000000b;
+ 0030  EE			       out dx, al
+ 0031  C3			       ret
+ 0032				Init8255 endp
+
+ 0032				InitM8259 proc
+ 0032  BA 0230			       MOV DX, A0_M8259     ; 主片8259 ICW1
+ 0035  B0 11			       MOV AL, 11H
+ 0037  EE			       OUT dx, AL
+				       
+ 0038  BA 0231			       MOV DX, A1_M8259     ; 8259 ICW2
+ 003B  B0 10			       MOV AL, 16       ; VECTOR START NUM =10H(IR0)  
+ 003D  EE			       OUT dx, AL
+				      
+ 003E  B0 80			       MOV AL,10000000B  ;8259 ICW3
+ 0040  EE			       OUT dx,AL
+				       
+ 0041  B0 01			       MOV AL,01H       ;8259 ICW4
+ 0043  EE			       OUT dx,AL
+				      
+ 0044  B0 FF			       MOV AL,  11111111B    ;8259 MASK WORD
+ 0046  EE			       OUT DX, AL
+ 0047  C3			       ret
+ 0048				InitM8259 endp
+
+ 0048				InitS8259 proc
+				      
+ 0048  BA 0240			       MOV DX,A0_S8259    ;SLAVE 8259 ICW1
+ 004B  B0 11			       MOV AL,11H
+ 004D  EE			       OUT dx,AL 
+
+ 004E  BA 0241			       MOV DX, A1_S8259    ; 8259 ICW2
+ 0051  B0 70			       MOV AL, 70H            ; VECTOR START NUM =70H(从片IR0)
+ 0053  EE			       OUT dx, AL
+				     
+ 0054  B0 07			       MOV AL,07             ;8259 ICW3
+ 0056  EE			       OUT dx,AL
+				       
+ 0057  B0 01			       MOV AL,01H           ;8259 ICW4
+ 0059  EE			       OUT dx,AL
+				      
+ 005A  B0 FF			       MOV AL,  11111111B    ;8259 MASK WORD
+ 005C  EE			       OUT DX, AL 
+ 005D  C3			       ret
+ 005E				InitS8259    endp
+
+ 005E				SetINTVector proc
+ 005E  1E			       push ds
+ 005F  50			       push ax
+ 0060  52			       push dx   
+				       
+ 0061  B8 0000				   mov ax, 0
+ 0064  8E D8			       mov ds, ax
+				 
+ 0066  BE 0040			       mov si,64
+ 0069  B8 0018 R		       mov ax, offset intHander_1s
+ 006C  89 04			       mov [si],ax       
+ 006E  8C C8			       mov ax,cs
+ 0070  89 44 02			       mov [si+2],ax
+				       ;;;      
+ 0073  5A			       pop dx
+ 0074  58			       pop ax 
+ 0075  1F			       pop ds 
+				       
+ 0076  C3			       ret 
+ 0077				SetINTVector endp  
+
+ 0077				cleanM8259IR0Mask proc
+				       
+ 0077  BA 0231			       mov dx, A1_M8259        
+ 007A  EC			       in  al, dx
+ 007B  24 FE			       and al, 11111110B         
+ 007D  EE			       out dx, al
+ 007E  C3			       ret
+ 007F				cleanM8259IR0Mask endp
+
+ 007F				addCounter proc
+ 007F  50				    push ax
+ 0080  53				    push bx
+ 0081  FE 06 000A R				inc counter ;;counter 增大1
+ 0085  33 C0					xor ax,ax
+ 0087  A0 000A R				mov al,counter
+ 008A  B3 3C					mov bl,60
+ 008C  F6 F3					div bl ;;counter除以100
+ 008E  88 26 000A R				mov counter,ah;;;ah等于余数
+ 0092  5B					pop bx
+ 0093  58					pop ax
+ 0094  C3					ret 
+ 0095				addCounter endp
+
+ 0095				dispNumber proc
+ 0095  33 C0			        xor ax,ax	
+ 0097  A0 000A R				mov al,counter
+ 009A  B3 0A					mov bl,10
+ 009C  F6 F3					div bl ;;counter除以10
+ 009E  A2 000C R				mov d1,al;;al等于商，故dl为counter的十位上的数；
+ 00A1  88 26 000B R				mov d0,ah;;ah等于余数，故d0为counter的个位上的数；
+					
+ 00A5  A0 000B R				mov al,d0
+ 00A8  BB 0000 R				mov bx,offset LEDCODE;leds
+ 00AB  D7					xlat  ;;执行完该指令，al=d0的段码
+ 00AC  BA 0200					mov dx,PA_8255
+ 00AF  EE					out dx,al;;将d0的段码输出A口
+ 00B0  B0 40					mov al,01000000B;对应PC6
+ 00B2  BA 0202					mov dx,PC_8255
+ 00B5  EE					out dx,al;;通过C口将PC6设置为1,点亮右边数码管，显示个位数。
+ 00B6  B0 00					mov al,0
+ 00B8  EE					out dx,al;;通过C口将PC6设置为0,熄灭右边数码管，不显示个位数。
+					
+ 00B9  A0 000C R				mov al,d1
+ 00BC  BB 0000 R				mov bx,offset LEDCODE;leds
+ 00BF  D7					xlat 
+ 00C0  BA 0200					mov dx,PA_8255
+ 00C3  EE					out dx,al;;将d1的段码输出A口
+ 00C4  B0 80					mov al,10000000B;;;对应PC7
+ 00C6  BA 0202					mov dx,PC_8255
+ 00C9  EE					out dx,al;;通过C口将PC7设置为1,点亮右二数码管，显示十位数。
+ 00CA  B0 00					mov al,0
+ 00CC  EE					out dx,al;通过C口将PC7设置为0,熄灭右右二数码管，不显示十位数。
+ 00CD  C3					ret 
+ 00CE				dispNumber endp 
+ 00CE				code ends
+				end   start
+Microsoft (R) Macro Assembler Version 6.11		    11/02/23 17:22:29
+five.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DATA . . . . . . . . . . . . . .	16 Bit	 000D	  Para	  Private 
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 00CE	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+Init8255 . . . . . . . . . . . .	P Near	 002B	  code	Length= 0007 Private
+InitM8259  . . . . . . . . . . .	P Near	 0032	  code	Length= 0016 Private
+InitS8259  . . . . . . . . . . .	P Near	 0048	  code	Length= 0016 Private
+SetINTVector . . . . . . . . . .	P Near	 005E	  code	Length= 0019 Private
+addCounter . . . . . . . . . . .	P Near	 007F	  code	Length= 0016 Private
+cleanM8259IR0Mask  . . . . . . .	P Near	 0077	  code	Length= 0008 Private
+dispNumber . . . . . . . . . . .	P Near	 0095	  code	Length= 0039 Private
+intHander_1s . . . . . . . . . .	P Far	 0018	  code	Length= 0008 Private
+sendM8259EOI . . . . . . . . . .	P Near	 0020	  code	Length= 000B Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+A0_M8259 . . . . . . . . . . . .	Number	 0230h	 
+A0_S8259 . . . . . . . . . . . .	Number	 0240h	 
+A1_M8259 . . . . . . . . . . . .	Number	 0231h	 
+A1_S8259 . . . . . . . . . . . .	Number	 0241h	 
+CTR_8255 . . . . . . . . . . . .	Number	 0203h	 
+LEDCODE  . . . . . . . . . . . .	Byte	 0000	  DATA	
+PA_8255  . . . . . . . . . . . .	Number	 0200h	 
+PB_8255  . . . . . . . . . . . .	Number	 0201h	 
+PC_8255  . . . . . . . . . . . .	Number	 0202h	 
+again  . . . . . . . . . . . . .	L Near	 0013	  code	
+counter  . . . . . . . . . . . .	Byte	 000A	  DATA	
+d0 . . . . . . . . . . . . . . .	Byte	 000B	  DATA	
+d1 . . . . . . . . . . . . . . .	Byte	 000C	  DATA	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+
+	   1 Warnings
+	   0 Errors

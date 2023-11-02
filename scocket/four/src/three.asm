@@ -7,7 +7,7 @@ t0 equ 270h
 tkz equ 273h
 
 
-in3_0809 equ 202h
+in3_0809 equ 203h
 pa_8255 equ 210h
 pb_8255 equ 211h
 pc_8255 equ 212h
@@ -39,18 +39,13 @@ start:
     mov ds, ax
     call init8255
 again:
-    call start0809
+    call start0809 
     call check0809Eoc
    	call read0809
-   	
 	mov n, al
 	
-	mov cx, 1000
-lp:
-	loop lp
 	
    	call delay
-   ; call display
     
 	jmp again
   	hlt
@@ -63,6 +58,7 @@ init8255 proc
 init8255 endp
 
 start0809 proc
+	mov al, 3
 	mov dx, in3_0809
 	out dx, al
 	ret
@@ -84,33 +80,12 @@ read0809 proc
 read0809 endp
 
 delay proc
-	
-	mov al, n
-	shl al, 4
-	shr al, 4
-	mov d0, al
-	
-	mov al,n
-	shr al, 4
-	mov d1, al
-	mov cx, 30000
-agde:
+	mov cx, 1000
+agains:
 	call display
-	loop agde
+	loop agains
+	ret
 delay endp
-
-;delay proc
-;	mov bx, 10
-;	call setTimer ;; mode = 0
-;again3s:
-;	call display
-
-;	mov dx, pc_8255
-;	in al, dx
-;	test al, 01h
-;	jz again3s
-	;ret
-;delay endp
   	
 setTimer proc
 	mov dx, tkz
@@ -127,6 +102,15 @@ setTimer endp
 
 display proc
   	xor ax,ax	
+  	
+  	mov al, n
+	shl al, 4
+	shr al, 4
+	mov d0, al
+	
+	mov al,n
+	shr al, 4
+	mov d1, al
   	
 	mov al,d0
 	mov bx,offset leds

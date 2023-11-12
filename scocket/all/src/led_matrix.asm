@@ -5,7 +5,7 @@
 ;**************************************
 ; PA -->> ROW
 ; PB -->> RCOW
-; PC0 -->> 8253.ouT0_8253 
+; PC0 -->> 8253.ouT0_8253
 .Model small
 .486
 
@@ -17,7 +17,7 @@ KZ_8255 equ 203h
 T0_8253  equ 210h
 CTR_8253 equ 213h
 
-data segment	
+data segment
 ZK  db 22h,0FFh,052h,076h, 023h,072h,052h,08Ah
     db 00H,00H,07EH,042H,081H,081H,081H,0FFH
     db 022H,022H,0FFH,026H,0F2H,063H,062H,092H
@@ -53,7 +53,7 @@ init8253 proc
 	mov dx, CTR_8253
 	mov al, 00110110b
 	out dx, al
-	mov dx, T0_8253 
+	mov dx, T0_8253
 	mov ax, 180
 	out dx, al
 	mov al, ah
@@ -68,14 +68,14 @@ next_high:
 	in al, dx
 	test al, 1
 	jnz next_high
-	
+
 next_low:
 	call flashWord
 	mov dx, PC_8255
 	in al, dx
 	test al, 1
 	jz next_low
-	
+
 	ret
 displayWord endp
 
@@ -96,7 +96,7 @@ againF:
 	rol ah, 1 ; Ñ­»·×óÒÆÒ»Î»
 	loop againF
 	pop bx
-	ret 
+	ret
 flashWord endp
 
 incCnt proc
@@ -105,7 +105,7 @@ incCnt proc
 	jle next_cnt
 	mov cnt, 0
 next_cnt:
-	ret 
+	ret
 incCnt endp
 
 code ends

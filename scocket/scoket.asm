@@ -5,7 +5,7 @@
 .model small
 .486
 
-port_8259_A_0 equ xxxx
+port_8259_A_0 equ    xxxx
 port_8259_A_1 equ xxxx
 
 port_8253_T0 equ xxxx

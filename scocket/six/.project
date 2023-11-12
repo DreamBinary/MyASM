@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<Project name="six" type="asm">
+  <file path="one.asm" />
+  <file path="two.asm" />
+  <Active path="one.asm" />
+</Project>

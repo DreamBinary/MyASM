@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<Project name="all" type="asm">
+  <file path="8253.asm" />
+  <file path="ADC0809.asm" />
+  <file path="DAC0832.asm" />
+  <file path="parallel.asm" />
+  <Active path="parallel.asm" />
+</Project>

@@ -1,0 +1,27 @@
+LINK : warning L4021: no stack segment
+
+ Start  Stop   Length Name                   Class
+ 00000H 00000H 00000H _TEXT                  CODE
+ 00000H 00000H 00000H _DATA                  DATA
+ 00000H 00030H 00031H CODE                   
+
+ Origin   Group
+ 0000:0   DGROUP
+
+  Address         Publics by Name
+
+
+  Address         Publics by Value
+
+
+Line numbers for ..\obj\8253_1.obj(8253_1.asm) segment CODE
+
+    18 0000:0000    19 0000:0003    20 0000:0005    21 0000:0006
+    22 0000:0009    23 0000:000c    24 0000:000d    25 0000:000f
+    27 0000:0010    28 0000:0013    29 0000:0015    30 0000:0016
+    31 0000:0019    32 0000:001c    33 0000:001d    34 0000:001f
+    36 0000:0020    37 0000:0023    38 0000:0025    39 0000:0026
+    40 0000:0029    41 0000:002c    42 0000:002d    43 0000:002f
+    45 0000:0030
+
+Program entry point at 0000:0000

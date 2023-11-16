@@ -1,0 +1,68 @@
+Microsoft (R) Macro Assembler Version 6.11		    11/16/23 14:19:50
+8253_0.asm						     Page 1 - 1
+
+
+				﻿
+8253_0.asm(1): error A2044: invalid character in file
+				.model small       
+				.486 
+
+ = 0210				T0_8253 equ 210h
+ = 0211				T1_8253 equ 211h
+ = 0212				T2_8253 equ 212h
+ = 0213				CTR_8253 equ 213h
+
+ 0000				code  segment
+				assume cs: code
+ 0000				start:
+ 0000  BA 0213				mov dx, CTR_8253
+8253_0.asm(13): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  B0 30				mov al, 00110000b
+ 0005  EE				out dx, al
+					
+ 0006  BA 0210				mov dx, T0_8253
+ 0009  B8 0009				mov ax, 9  ; first high level -->> write 9 from init register to sub one register
+ 000C  EE				out dx, al
+ 000D  8A C4				mov al, ah
+ 000F  EE				out dx, al
+					; high -->> light led
+ 0010  F4				hlt
+ 0011				code ends
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    11/16/23 14:19:50
+8253_0.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 0011	  Para	  Private 
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+CTR_8253 . . . . . . . . . . . .	Number	 0213h	 
+T0_8253  . . . . . . . . . . . .	Number	 0210h	 
+T1_8253  . . . . . . . . . . . .	Number	 0211h	 
+T2_8253  . . . . . . . . . . . .	Number	 0212h	 
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+
+	   1 Warnings
+	   1 Errors

@@ -1,0 +1,186 @@
+Microsoft (R) Macro Assembler Version 6.11		    11/16/23 15:44:38
+key.asm							     Page 1 - 1
+
+
+				.model small
+				.486
+ = 0200				PA_8255 equ 200H
+ = 0201				PB_8255 equ 201H
+ = 0202				PC_8255 equ 202H
+ = 0203				CTRL_8255 equ 203H
+
+ 0000				data segment
+ 0000 00				Num db ?
+ 0001 3F 06 5B 4F 66 6D			digits db 3fh,06h,5BH,4fh,66h,6dh,7dh,07h,7fh,67h
+       7D 07 7F 67
+ 000B  77 7C 39 5E 79 71			db 77h,7ch,39h,5eh,79h,71h
+ 0011				data ends
+
+ 0000				code segment
+					assume cs:code,ds:data
+ 0000				start:
+ 0000  B8 ---- R			mov ax,data
+key.asm(17): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8				mov ds,ax
+ 0005  E8 001A				call init8255
+ 0008				again:
+ 0008  E8 003C				call readKey
+ 000B  8B D8				mov bx,ax
+ 000D  E8 0019				call delay
+					
+ 0010  E8 0034				call readKey
+ 0013  3B D8				cmp bx,ax
+ 0015  75 F1				jnz again
+ 0017  E8 0041				call getKeyCode
+ 001A  E8 0062				call OutPut
+ 001D  E8 0009				call delay
+ 0020  EB E6				jmp again
+
+ 0022				init8255 proc
+ 0022  BA 0203				mov dx,CTRL_8255
+ 0025  B0 8A				mov al,10001010B
+ 0027  EE				out dx,al
+ 0028  C3				ret
+ 0029				init8255 endp
+
+ 0029				delay proc
+ 0029  B9 001E					mov cx,30
+ 002C				x1:		
+ 002C  E8 0006					call wait4high
+ 002F  E8 000C					call wait4low
+ 0032  E2 F8					loop x1
+ 0034  C3					ret
+ 0035				delay endp
+
+ 0035				wait4high proc
+ 0035				nexth:
+ 0035  BA 0201					mov dx,PB_8255
+ 0038  EC					in al,dx
+ 0039  A8 01					test al,01h
+ 003B  74 F8					jz nexth
+ 003D  C3					ret
+ 003E				wait4high endp
+
+ 003E				wait4low proc
+ 003E				nextl:
+ 003E  BA 0201					mov dx,PB_8255
+ 0041  EC					in al,dx
+ 0042  A8 01					test al,01h
+ 0044  75 F8					jnz nextl
+ 0046  C3					ret
+ 0047				wait4low endp
+
+ 0047				readKey proc
+ 0047  B4 FE					mov ah,11111110B
+ 0049				scan:
+ 0049  8A C4					mov al,ah
+ 004B  BA 0202					mov dx,PC_8255
+ 004E  EE					out dx,al
+ 004F  EC					in 	al,dx
+ 0050  0C 0F					or 	al,0fh
+ 0052  3C FF					cmp al,0ffh
+ 0054  75 04					jne final
+ 0056  D0 C4					rol ah,1
+ 0058  EB EF					jmp scan
+ 005A				final:	
+ 005A  C3					ret
+ 005B				readKey endp
+
+ 005B				getKeyCode proc
+ 005B  F6 D4					not ah
+ 005D  F6 D0					not al
+ 005F  B7 00					mov bh,00h
+ 0061  B3 00					mov bl,00h
+ 0063				KK: 	
+ 0063  D0 EC					shr ah,1
+ 0065  72 05					jc next1
+ 0067  80 C7 01					add bh,1h
+ 006A  EB F7					jmp KK
+ 006C				next1:	
+ 006C  D0 E8					shr al,1
+ 006E  72 05					jc next2
+ 0070  80 C3 04					add bl,4
+ 0073  EB F7					jmp next1
+ 0075				next2:	
+ 0075  02 FB					add bh,bl
+ 0077  8A C7					mov al,bh
+ 0079  2C 10					sub al,16
+ 007B  A2 0000 R				mov Num,al
+ 007E  C3			cmpexit:ret
+ 007F				getKeyCode endp
+
+ 007F				OutPut proc
+ 007F  BA 0200				mov dx,PA_8255
+ 0082  8A 1E 0000 R			mov bl,Num
+ 0086  B7 00				mov bh,0			;∏ﬂ4Œª«Â¡„
+ 0088  8A 87 0001 R			mov al,digits[bx]
+ 008C  EE				out dx,al
+ 008D  C3				ret
+ 008E				OutPut endp
+
+ 008E				code ends
+				end start
+
+Microsoft (R) Macro Assembler Version 6.11		    11/16/23 15:44:38
+key.asm							     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 008E	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 0011	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+OutPut . . . . . . . . . . . . .	P Near	 007F	  code	Length= 000F Private
+delay  . . . . . . . . . . . . .	P Near	 0029	  code	Length= 000C Private
+getKeyCode . . . . . . . . . . .	P Near	 005B	  code	Length= 0024 Private
+init8255 . . . . . . . . . . . .	P Near	 0022	  code	Length= 0007 Private
+readKey  . . . . . . . . . . . .	P Near	 0047	  code	Length= 0014 Private
+wait4high  . . . . . . . . . . .	P Near	 0035	  code	Length= 0009 Private
+wait4low . . . . . . . . . . . .	P Near	 003E	  code	Length= 0009 Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+CTRL_8255  . . . . . . . . . . .	Number	 0203h	 
+KK . . . . . . . . . . . . . . .	L Near	 0063	  code	
+Num  . . . . . . . . . . . . . .	Byte	 0000	  data	
+PA_8255  . . . . . . . . . . . .	Number	 0200h	 
+PB_8255  . . . . . . . . . . . .	Number	 0201h	 
+PC_8255  . . . . . . . . . . . .	Number	 0202h	 
+again  . . . . . . . . . . . . .	L Near	 0008	  code	
+cmpexit  . . . . . . . . . . . .	L Near	 007E	  code	
+digits . . . . . . . . . . . . .	Byte	 0001	  data	
+final  . . . . . . . . . . . . .	L Near	 005A	  code	
+next1  . . . . . . . . . . . . .	L Near	 006C	  code	
+next2  . . . . . . . . . . . . .	L Near	 0075	  code	
+nexth  . . . . . . . . . . . . .	L Near	 0035	  code	
+nextl  . . . . . . . . . . . . .	L Near	 003E	  code	
+scan . . . . . . . . . . . . . .	L Near	 0049	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+x1 . . . . . . . . . . . . . . .	L Near	 002C	  code	
+
+	   1 Warnings
+	   0 Errors

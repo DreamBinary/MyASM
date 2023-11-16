@@ -1,5 +1,5 @@
 ;**************************************
-;* coded by CXQ
+;* coded by fiv
 ; 试在实验箱上设计一个系统，该系统每收到一个正脉冲，就读取一次实验箱上
 ; 八个开关 Ki 的电平，并统计其高电平开关的数量 H，然后将 H 显示在实验箱的
 ; 一个七段数码管上。
@@ -11,7 +11,6 @@ PA_8255   equ  200h
 PB_8255   equ  201h
 PC_8255   equ  202h
 CTR_8255  equ  203h
-
 
 data  segment
 	leds   db   3fh,06h,5bh,4fh,66h
@@ -25,11 +24,11 @@ assume cs:code,ds:data
 start:
     mov  ax,data
 	mov  ds,ax
-	call init8255;����A�ڡ�C�ϰ��Ϊ��ʽ0�������C�°������
+	call init8255
 again:
-	call wait4High;;�ȴ�PC0��ɸߵ�ƽ,�������������ʾcounter
+	call wait4High
 	call countLight
-	call wait4Low;;�ȴ�PC0��ɵ͵�ƽ,�������������ʾcounter
+	call wait4Low
 	jmp  again
   	hlt
 
@@ -45,7 +44,7 @@ nextL:
 	call dispNumber
 	mov  dx,PC_8255
 	in   al ,dx
-	test al,01h;;;PC0����0��
+	test al,01h
 	jz   nextL
 	ret
 wait4High endp
@@ -55,7 +54,7 @@ nextH:
 	call dispNumber
 	mov   dx,PC_8255
 	in    al ,dx
-	test  al,01h;;;PC0����0��
+	test  al,01h
 	jnz  nextH
 	ret
 wait4Low endp
@@ -91,11 +90,11 @@ dispNumber proc
 	xlat
 	mov dx,PB_8255
 	out dx,al
-	mov al,01000000B;��ӦPC6
+	mov al,01000000B
 	mov dx,PC_8255
-	out dx,al;;ͨ��C�ڽ�PC6����Ϊ1,�����ұ�����ܣ���ʾ��λ����
+	out dx,al
 	mov al,0
-	out dx,al;;ͨ��C�ڽ�PC6����Ϊ0,Ϩ���ұ�����ܣ�����ʾ��λ����
+	out dx,al
 	ret
 dispNumber endp
 

@@ -1,5 +1,5 @@
-;5、试在实验箱上设计一个系统，该系统每 100 毫秒采样试验箱中一个直流电源
-;的电压，并将所得电压值显示在 8 段数码上。
+;4、试在实验箱上设计一个系统，该系统每 100 毫秒采样试验箱中一个直流电源
+;的电压（0~5v），并将所得数字量以十六进制方式显示在 8 段数码上。
 ;cs0-0809.cs
 ;cs1-8255.cs
 ;cs6-8253.cs
@@ -12,31 +12,23 @@
 ;8255.pc7--bit2
 ;0809.clk-100khz
 ;vout1-0809.int0
-; S1: q= n /51;
-; r=n % 51;
-; S2: m1=r / 5;
-; m2= r % 5
-; S3: if m2 >=3 then s=m1 +1;
-; else s=m1
-; S4: U= q.s
+
 .model small 
 .486
-in0_0809 equ 200h
-pa_8255 equ 210h
-pb_8255 equ 211h
-pc_8255 equ 212h
-ctr_8255 equ 213h
-T0_8253 equ 260h  
-KZ_8253 equ 263h
+in0_0809 equ 260h
+pa_8255 equ 200h
+pb_8255 equ 201h
+pc_8255 equ 202h
+ctr_8255 equ 203h
+T0_8253 equ 210h  
+KZ_8253 equ 213h
 
 data segment
 	led db 3fh,06h,5bh,4fh,66h,6dh,7dh,07h,7fh,67h
+		db 77h,7ch,39h,5eh,79h,71h
 	n db ?
-	q db ?
-	r db ?
-	s db ?
-	m1 db ?
-	m2 db ?
+	high_num db ?
+	low_num db ?
 data ends
 
 code segment
@@ -46,11 +38,11 @@ start:
 	mov ds,ax
 	call init8255
 again1:
-	call start0809
+	call delay300ms
+	call start0809	
 	call check0809eoc
 	call read0809	
 	mov n,al
-	call delay100ms
 	jmp again1
 	hlt
 	
@@ -62,7 +54,7 @@ init8255 proc
 init8255 endp
 
 start0809 proc
-	mov dx,200h
+	mov dx,260h
 	mov al,2
 	out dx,al
 	ret
@@ -70,10 +62,11 @@ start0809 endp
 
 check0809eoc proc
 again:
+	call display
 	mov dx,pc_8255
 	in al,dx
 	test al,01h
-	jz again
+	jz again  ;=0跳again
 	ret
 check0809eoc endp
 
@@ -83,18 +76,17 @@ read0809 proc
 	ret
 read0809 endp
 
-delay100ms proc
-	mov bx,10
+delay300ms proc
+	mov bx,30
 	call setTimer
-	call suanfa
-again100ms:
+again300ms:
 	call display
 	mov dx,pc_8255
 	in al,dx
 	test al,2
-	jz again100ms
+	jz again300ms
 	ret
-delay100ms endp
+delay300ms endp
 
 setTimer proc
 	mov dx,kz_8253
@@ -108,46 +100,27 @@ setTimer proc
 	ret
 setTimer endp
 
-suanfa proc
-s1:	mov al,n
-	mov bl,51
-	div bl
-	mov q,al
-	mov r,ah
-s2:	xor ax,ax
-	mov al,r
-	mov bl,5
-	div bl
-	mov m1,al
-	mov m2,ah
-s3:	cmp m2,3
-	jb L1
-	inc al
-	mov s,al
-	jmp final
-L1:
-	mov s,al
-final: 
-	ret
-suanfa endp
-
 display proc
+	mov bl,16
+	xor dx,dx
+	xor ax,ax
+	mov al,n
+	div bl
+	mov high_num,al
+	mov low_num,ah
 	call writehigh
 	call writelow
-	ret 
+	ret
 display endp
 
 writehigh proc
 	mov dx,pb_8255
 	mov bx,0
-	mov bl,q
+	mov bl,high_num
 	mov al,led[bx]
-	or al,80h;;显示小数点的
 	out dx,al
 	mov dx,pc_8255
 	mov al,10000000b
-	out dx,al
-	mov al,0
 	out dx,al
 	ret
 writehigh endp
@@ -155,13 +128,11 @@ writehigh endp
 writelow proc
 	mov dx,pb_8255
 	mov bx,0
-	mov bl,s
+	mov bl,low_num
 	mov al,led[bx]
 	out dx,al
 	mov dx,pc_8255
 	mov al,01000000b
-	out dx,al
-	mov al,0
 	out dx,al
 	ret
 writelow endp

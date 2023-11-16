@@ -1,0 +1,237 @@
+Microsoft (R) Macro Assembler Version 6.11		    11/16/23 15:09:07
+ADC0809_ten.asm						     Page 1 - 1
+
+
+				; 试在实验箱上设计一个系统，该系统每 100 毫秒采样试验箱中一个直流电源
+				; 的电压，并将所得电压值显示在 8 段数码上。
+				; S1: q= n /51;
+				; r=n % 51;
+				; S2: m1=r / 5;
+				; m2= r % 5
+				; S3: if m2 >=3 then s=m1 +1;
+				; else s=m1
+				; S4: U= q.s
+
+				.model small 
+				.486
+ = 0200				PA_8255   equ  200h
+ = 0201				PB_8255   equ  201h
+ = 0202				PC_8255   equ  202h
+ = 0203				CTR_8255  equ  203h
+ = 0210				T0_8253   equ  210h
+ = 0213				CTR_8253  equ  213h
+ = 0260				IN0_0809  equ  260h
+
+ 0000				data segment
+ 0000 3F 06 5B 4F 66 6D			led db 3fh,06h,5bh,4fh,66h,6dh,7dh,07h,7fh,67h
+       7D 07 7F 67
+ 000A 00				n db ?
+ 000B 00				q db ?
+ 000C 00				r db ?
+ 000D 00				s db ?
+ 000E 00				m1 db ?
+ 000F 00				m2 db ?
+ 0010				data ends
+
+ 0000				code segment
+					assume cs:code,ds:data
+ 0000				start:
+ 0000  B8 ---- R			mov ax,data
+ADC0809_ten.asm(34): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8				mov ds,ax
+ 0005  E8 0012				call init8255
+ 0008				again1:
+ 0008  E8 0016				call start0809
+ 000B  E8 001A				call check0809eoc
+ 000E  E8 0020				call read0809	
+ 0011  A2 000A R			mov n,al
+ 0014  E8 001F				call delay100ms
+ 0017  EB EF				jmp again1
+ 0019  F4				hlt
+					
+ 001A				init8255 proc
+ 001A  BA 0203				mov dx,ctr_8255
+ 001D  B0 81				mov al,10000001b
+ 001F  EE				out dx,al
+ 0020  C3				ret
+ 0021				init8255 endp
+
+ 0021				start0809 proc
+ 0021  BA 0200				mov dx,200h
+ 0024  B0 02				mov al,2
+ 0026  EE				out dx,al
+ 0027  C3				ret
+ 0028				start0809 endp
+
+ 0028				check0809eoc proc
+ 0028				again:
+ 0028  BA 0202				mov dx,pc_8255
+ 002B  EC				in al,dx
+ 002C  A8 01				test al,01h
+ 002E  74 F8				jz again
+ 0030  C3				ret
+ 0031				check0809eoc endp
+
+ 0031				read0809 proc
+ 0031  BA 0260				mov dx,IN0_0809
+ 0034  EC				in al,dx
+ 0035  C3				ret
+ 0036				read0809 endp
+
+ 0036				delay100ms proc
+ 0036  BB 000A				mov bx,10
+ 0039  E8 000F				call setTimer
+ 003C  E8 001C				call suanfa
+ 003F				again100ms:
+ 003F  E8 0049				call display
+ 0042  BA 0202				mov dx,pc_8255
+ 0045  EC				in al,dx
+ 0046  A8 02				test al,2
+ 0048  74 F5				jz again100ms
+ 004A  C3				ret
+ 004B				delay100ms endp
+
+ 004B				setTimer proc
+ 004B  BA 0213				mov dx,CTR_8253
+ 004E  B0 30				mov al,00110000B
+ 0050  EE				out dx,al
+ 0051  BA 0210				mov dx,T0_8253
+ 0054  8B C3				mov ax,bx
+ 0056  EE				out dx,al
+ 0057  8A C4				mov al,ah
+ 0059  EE				out dx,al
+ 005A  C3				ret
+ 005B				setTimer endp
+
+ 005B				suanfa proc
+ 005B  A0 000A R		s1:	mov al,n
+ 005E  B3 33				mov bl,51
+ 0060  F6 F3				div bl
+ 0062  A2 000B R			mov q,al
+ 0065  88 26 000C R			mov r,ah
+ 0069  33 C0			s2:	xor ax,ax
+ 006B  A0 000C R			mov al,r
+ 006E  B3 05				mov bl,5
+ 0070  F6 F3				div bl
+ 0072  A2 000E R			mov m1,al
+ 0075  88 26 000F R			mov m2,ah
+ 0079  80 3E 000F R 03		s3:	cmp m2,3
+ 007E  72 07				jb L1
+ 0080  FE C0				inc al
+ 0082  A2 000D R			mov s,al
+ 0085  EB 03				jmp final
+ 0087				L1:
+ 0087  A2 000D R			mov s,al
+ 008A				final: 
+ 008A  C3				ret
+ 008B				suanfa endp
+
+ 008B				display proc
+ 008B  E8 0004				call writehigh
+ 008E  E8 001C				call writelow
+ 0091  C3				ret 
+ 0092				display endp
+
+ 0092				writehigh proc
+ 0092  BA 0201				mov dx,pb_8255
+ 0095  BB 0000				mov bx,0
+ 0098  8A 1E 000B R			mov bl,q
+ 009C  8A 87 0000 R			mov al,led[bx]
+ 00A0  0C 80				or al,80h;;显示小数点的
+ 00A2  EE				out dx,al
+ 00A3  BA 0202				mov dx,pc_8255
+ 00A6  B0 80				mov al,10000000b
+ 00A8  EE				out dx,al
+ 00A9  B0 00				mov al,0
+ 00AB  EE				out dx,al
+ 00AC  C3				ret
+ 00AD				writehigh endp
+
+ 00AD				writelow proc
+ 00AD  BA 0201				mov dx,pb_8255
+ 00B0  BB 0000				mov bx,0
+ 00B3  8A 1E 000D R			mov bl,s
+ 00B7  8A 87 0000 R			mov al,led[bx]
+ 00BB  EE				out dx,al
+ 00BC  BA 0202				mov dx,pc_8255
+ 00BF  B0 40				mov al,01000000b
+ 00C1  EE				out dx,al
+ 00C2  B0 00				mov al,0
+ 00C4  EE				out dx,al
+ 00C5  C3				ret
+ 00C6				writelow endp
+
+ 00C6				code ends
+				end start 
+Microsoft (R) Macro Assembler Version 6.11		    11/16/23 15:09:07
+ADC0809_ten.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 00C6	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 0010	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+check0809eoc . . . . . . . . . .	P Near	 0028	  code	Length= 0009 Private
+delay100ms . . . . . . . . . . .	P Near	 0036	  code	Length= 0015 Private
+display  . . . . . . . . . . . .	P Near	 008B	  code	Length= 0007 Private
+init8255 . . . . . . . . . . . .	P Near	 001A	  code	Length= 0007 Private
+read0809 . . . . . . . . . . . .	P Near	 0031	  code	Length= 0005 Private
+setTimer . . . . . . . . . . . .	P Near	 004B	  code	Length= 0010 Private
+start0809  . . . . . . . . . . .	P Near	 0021	  code	Length= 0007 Private
+suanfa . . . . . . . . . . . . .	P Near	 005B	  code	Length= 0030 Private
+writehigh  . . . . . . . . . . .	P Near	 0092	  code	Length= 001B Private
+writelow . . . . . . . . . . . .	P Near	 00AD	  code	Length= 0019 Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+CTR_8253 . . . . . . . . . . . .	Number	 0213h	 
+CTR_8255 . . . . . . . . . . . .	Number	 0203h	 
+IN0_0809 . . . . . . . . . . . .	Number	 0260h	 
+L1 . . . . . . . . . . . . . . .	L Near	 0087	  code	
+PA_8255  . . . . . . . . . . . .	Number	 0200h	 
+PB_8255  . . . . . . . . . . . .	Number	 0201h	 
+PC_8255  . . . . . . . . . . . .	Number	 0202h	 
+T0_8253  . . . . . . . . . . . .	Number	 0210h	 
+again100ms . . . . . . . . . . .	L Near	 003F	  code	
+again1 . . . . . . . . . . . . .	L Near	 0008	  code	
+again  . . . . . . . . . . . . .	L Near	 0028	  code	
+final  . . . . . . . . . . . . .	L Near	 008A	  code	
+led  . . . . . . . . . . . . . .	Byte	 0000	  data	
+m1 . . . . . . . . . . . . . . .	Byte	 000E	  data	
+m2 . . . . . . . . . . . . . . .	Byte	 000F	  data	
+n  . . . . . . . . . . . . . . .	Byte	 000A	  data	
+q  . . . . . . . . . . . . . . .	Byte	 000B	  data	
+r  . . . . . . . . . . . . . . .	Byte	 000C	  data	
+s1 . . . . . . . . . . . . . . .	L Near	 005B	  code	
+s2 . . . . . . . . . . . . . . .	L Near	 0069	  code	
+s3 . . . . . . . . . . . . . . .	L Near	 0079	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+s  . . . . . . . . . . . . . . .	Byte	 000D	  data	
+
+	   1 Warnings
+	   0 Errors

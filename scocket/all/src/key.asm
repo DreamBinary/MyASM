@@ -1,18 +1,18 @@
 ;**************************************
-;* coded by CXQ
-; å°†çŸ©é˜µé”®ç›˜çš„é”®å·ï¼ˆ0ï¼Fï¼‰ åœ¨ 7 æ®µæ•°ç ç®¡ä¸Šæ˜¾ç¤ºï¼ŒæŒ‰ä¸‹å¯¹åº”çš„é”®æ˜¾ç¤ºå¯¹åº”çš„æ•°å­—ã€‚
+;* coded by fiv
+; ½«¾ØÕó¼üÅÌµÄ¼üºÅ£¨0£­F£© ÔÚ 7 ¶ÎÊıÂë¹ÜÉÏÏÔÊ¾£¬°´ÏÂ¶ÔÓ¦µÄ¼üÏÔÊ¾¶ÔÓ¦µÄÊı×Ö
 ;**************************************
 .model small
 .486
+PA_8255 equ 200H
+PB_8255 equ 201H
+PC_8255 equ 202H
+CTRL_8255 equ 203H
 
-PA_8255 equ 200h
-PB_8255 equ 201h
-PC_8255 equ 202h
-ctr_8255 equ 203h
-
-data segment	
-LEDCODE db 3FH,06H,5BH,4FH,66H,6DH,7DH,07H,
-        db 7FH,67H,77H,7CH,39H,5EH,79H,71H
+data segment
+	Num db ?
+	digits db 3fh,06h,5BH,4fh,66h,6dh,7dh,07h,7fh,67h
+		db 77h,7ch,39h,5eh,79h,71h
 data ends
 
 code segment
@@ -25,116 +25,96 @@ again:
 	call readKey
 	mov bx,ax
 	call delay
+	
 	call readKey
 	cmp bx,ax
-	jnz again; start
-	call keyUp
-	mov ax,bx
+	jnz again
 	call getKeyCode
-	call disp
+	call OutPut
 	call delay
-	;call lightLeds;write8255PB
 	jmp again
-	hlt
-
 
 init8255 proc
-	mov dx,ctr_8255
+	mov dx,CTRL_8255
 	mov al,10001010B
 	out dx,al
 	ret
 init8255 endp
 
-readKey proc
-	mov ah,11111110B
-scan:
-    mov al,ah
-    mov dx,pc_8255
-    out dx,al
-	IN al,dx
-	OR al,0FH
-	CMP al,0FFH
-	JNE final
-	ROL ah,1
-	jmp scan
-final:	RET
-readKey end
-	
 delay proc
-		push cx
 		mov cx,30
-	X1:
-		call wait4High
-		call wait4Low
-		LOOP X1
-		POP cx
+x1:		
+		call wait4high
+		call wait4low
+		loop x1
 		ret
 delay endp
 
-keyUp proc 
-noup:	mov al,ah
-		mov dx,pc_8255
-		out dx,al
-		IN 	al,dx
-		or al,0fh
-		cmp al,0ffh
-		je exit
-		jmp noup
-exit:	ret
-keyUp	endp
-
-getKeyCode PROC
-			not ah
-			not al
-			mov BH,00H
-			mov BL,00H
-KK:			shr ah,1
-			jc NEXT1
-			add BH,1H
-			jmp KK
-NEXT1:		shr al,1
-			jc NEXT2
-			add BL,4
-			jmp NEXT1
-NEXT2:		add BH,BL
-			mov al,BH
-			sub al,16
-CMPEXIT:	RET
-getKeyCode ENDP
-
-disp	proc
-		push bx
-		push dx
-		mov bx,offset ledcode
-		mov ah,0
-		add bx,ax
-		mov al,[bx]
-		mov dx,pa_8255
-		out dx,al
-		pop dx
-		pop bx
+wait4high proc
+nexth:
+		mov dx,PB_8255
+		in al,dx
+		test al,01h
+		jz nexth
 		ret
-disp 	endp
+wait4high endp
 
+wait4low proc
+nextl:
+		mov dx,PB_8255
+		in al,dx
+		test al,01h
+		jnz nextl
+		ret
+wait4low endp
 
-wait4High proc
+readKey proc
+		mov ah,11111110B
+scan:
+		mov al,ah
+		mov dx,PC_8255
+		out dx,al
+		in 	al,dx
+		or 	al,0fh
+		cmp al,0ffh
+		jne final
+		rol ah,1
+		jmp scan
+final:	
+		ret
+readKey endp
 
-nextH:
-	mov dx,pb_8255
-	in al,dx
-	test al,01h
-	jz nextH
+getKeyCode proc
+		not ah
+		not al
+		mov bh,00h
+		mov bl,00h
+KK: 	
+		shr ah,1
+		jc next1
+		add bh,1h
+		jmp KK
+next1:	
+		shr al,1
+		jc next2
+		add bl,4
+		jmp next1
+next2:	
+		add bh,bl
+		mov al,bh
+		sub al,16
+		mov Num,al
+cmpexit:ret
+getKeyCode endp
+
+OutPut proc
+	mov dx,PA_8255
+	mov bl,Num
+	mov bh,0			;¸ß4Î»ÇåÁã
+	mov al,digits[bx]
+	out dx,al
 	ret
-wait4High endp
-
-wait4Low proc
-nextL:
-	mov dx,pb_8255
-	in al,dx
-	test al,01h
-	jnz nextL
-	ret
-wait4Low endp
+OutPut endp
 
 code ends
 end start

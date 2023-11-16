@@ -1,6 +1,6 @@
 ;**************************************
 ;* coded by CXQ
-;
+; parallel
 ;**************************************
 
 .model small 
@@ -133,7 +133,7 @@ init8253 proc
 		ret
 init8253 endp      
               
-oneHandler  proc  far    ;中断程序 
+oneHandler  proc  far
 	   push dx
 	   push ax
 	   push ds
@@ -153,7 +153,7 @@ oneHandler  proc  far    ;中断程序
        iret
 oneHandler  endp
 
-twoHandler  proc  far    ;中断程序 
+twoHandler  proc  far
 	   push dx
 	   push ax
 	   push ds
@@ -172,7 +172,7 @@ twoHandler  proc  far    ;中断程序
        iret
 twoHandler  endp
 
-threeHandler  proc  far    ;中断程序 
+threeHandler  proc  far
 	   push dx
 	   push ax
 	   push ds
@@ -191,7 +191,7 @@ threeHandler  proc  far    ;中断程序
        iret
 threeHandler  endp
 
-fourHandler  proc  far    ;中断程序 
+fourHandler  proc  far
 	   push dx
 	   push ax
 	   push ds
@@ -293,12 +293,12 @@ showLighter endp
 addCounter proc
 	    push ax
 	    push bx
-		inc counter ;;counter 增大1
+		inc counter
 		xor ax,ax
 		mov al,counter
 		mov bl,20
-		div bl ;;counter除以100
-		mov counter,ah;;;ah等于余数
+		div bl
+		mov counter,ah
 		pop bx
 		pop ax
 		ret 
@@ -338,31 +338,31 @@ dispNumber20 proc
         xor ax,ax	
 		mov al,counter
 		mov bl,10
-		div bl ;;counter除以10
-		mov d1,al;;al等于商，故dl为counter的十位上的数；
-		mov d0,ah;;ah等于余数，故d0为counter的个位上的数；
+		div bl
+		mov d1,al
+		mov d0,ah
 	
 		mov al,d0
 		mov bx,offset LEDCODE;leds
-		xlat  ;;执行完该指令，al=d0的段码
+		xlat
 		mov dx,PA_8255
-		out dx,al;;将d0的段码输出A口
-		mov al,01000000B;对应PC6
+		out dx,al
+		mov al,01000000B
 		mov dx,PC_8255
-		out dx,al;;通过C口将PC6设置为1,点亮右边数码管，显示个位数。
+		out dx,al
 		mov al,0
-		out dx,al;;通过C口将PC6设置为0,熄灭右边数码管，不显示个位数。
+		out dx,al
 	
 		mov al,d1
 		mov bx,offset LEDCODE;leds
 		xlat 
 		mov dx,PA_8255
-		out dx,al;;将d1的段码输出A口
-		mov al,10000000B;;;对应PC7
+		out dx,al
+		mov al,10000000B
 		mov dx,PC_8255
-		out dx,al;;通过C口将PC7设置为1,点亮右二数码管，显示十位数。
+		out dx,al
 		mov al,0
-		out dx,al;通过C口将PC7设置为0,熄灭右右二数码管，不显示十位数。
+		out dx,al
 		ret 
 dispNumber20 endp 
 
@@ -370,31 +370,31 @@ dispNumber15 proc
         xor ax,ax	
 		mov al,cnt15
 		mov bl,10
-		div bl ;;counter除以10
-		mov d1_15,al;;al等于商，故dl为counter的十位上的数；
-		mov d0_15,ah;;ah等于余数，故d0为counter的个位上的数；
+		div bl
+		mov d1_15,al
+		mov d0_15,ah
 	
 		mov al,d0_15
 		mov bx,offset LEDCODE;leds
-		xlat  ;;执行完该指令，al=d0的段码
+		xlat
 		mov dx,PA_8255
-		out dx,al;;将d0的段码输出A口
-		mov al,00010000B;对应PC6
+		out dx,al
+		mov al,00010000B
 		mov dx,PC_8255
-		out dx,al;;通过C口将PC6设置为1,点亮右边数码管，显示个位数。
+		out dx,al
 		mov al,0
-		out dx,al;;通过C口将PC6设置为0,熄灭右边数码管，不显示个位数。
+		out dx,al
 	
 		mov al,d1_15
 		mov bx,offset LEDCODE;leds
 		xlat 
 		mov dx,PA_8255
-		out dx,al;;将d1的段码输出A口
-		mov al,00100000B;;;对应PC7
+		out dx,al
+		mov al,00100000B
 		mov dx,PC_8255
-		out dx,al;;通过C口将PC7设置为1,点亮右二数码管，显示十位数。
+		out dx,al
 		mov al,0
-		out dx,al;通过C口将PC7设置为0,熄灭右右二数码管，不显示十位数。
+		out dx,al
 		ret 
 dispNumber15 endp 
 
@@ -403,31 +403,31 @@ dispNumber60 proc
         xor ax,ax	
 		mov al,cnt60
 		mov bl,10
-		div bl ;;counter除以10
-		mov d1_60,al;;al等于商，故dl为counter的十位上的数；
-		mov d0_60,ah;;ah等于余数，故d0为counter的个位上的数；
+		div bl
+		mov d1_60,al
+		mov d0_60,ah
 	
 		mov al,d0_60
 		mov bx,offset LEDCODE;leds
-		xlat  ;;执行完该指令，al=d0的段码
+		xlat
 		mov dx,PA_8255
-		out dx,al;;将d0的段码输出A口
-		mov al,00000100B;对应PC6
+		out dx,al
+		mov al,00000100B
 		mov dx,PC_8255
-		out dx,al;;通过C口将PC6设置为1,点亮右边数码管，显示个位数。
+		out dx,al
 		mov al,0
-		out dx,al;;通过C口将PC6设置为0,熄灭右边数码管，不显示个位数。
+		out dx,al
 	
 		mov al,d1_60
-		mov bx,offset LEDCODE;leds
+		mov bx,offset LEDCODE
 		xlat 
 		mov dx,PA_8255
-		out dx,al;;将d1的段码输出A口
-		mov al,00001000B;;;对应PC7
+		out dx,al
+		mov al,00001000B
 		mov dx,PC_8255
-		out dx,al;;通过C口将PC7设置为1,点亮右二数码管，显示十位数。
+		out dx,al
 		mov al,0
-		out dx,al;通过C口将PC7设置为0,熄灭右右二数码管，不显示十位数。
+		out dx,al
 		ret 
 dispNumber60 endp 
 

@@ -1,8 +1,17 @@
 <?xml version="1.0"?>
 <Project name="all" type="asm">
-  <file path="8253.asm" />
+  <file path="8253_0.asm" />
+  <file path="8253_1.asm" />
   <file path="ADC0809.asm" />
+  <file path="ADC0809_hex.asm" />
+  <file path="ADC0809_ten.asm" />
+  <file path="counter.asm" />
   <file path="DAC0832.asm" />
+  <file path="int_0809.asm" />
+  <file path="key.asm" />
+  <file path="led_matrix.asm" />
   <file path="parallel.asm" />
-  <Active path="parallel.asm" />
+  <file path="read_level.asm" />
+  <file path="tmp.asm" />
+  <Active path="tmp.asm" />
 </Project>

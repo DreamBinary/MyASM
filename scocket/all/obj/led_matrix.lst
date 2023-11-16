@@ -1,0 +1,179 @@
+Microsoft (R) Macro Assembler Version 6.11		    11/16/23 15:15:09
+led_matrix.asm						     Page 1 - 1
+
+
+				;**************************************                  *
+				;* coded by CXQ
+				; 试在实验箱 LED 点阵显示器上用红色循环显示“接口技术”四个字，
+				; 要求每个字显示 1.8秒后再显示下一个字。
+				;**************************************
+				; PA -->> ROW
+				; PB -->> RCOW
+				; PC0 -->> 8253.ouT0_8253
+				.Model small
+				.486
+
+ = 0200				PA_8255 equ 200h
+ = 0201				PB_8255 equ 201h
+ = 0202				PC_8255 equ 202h
+ = 0203				KZ_8255 equ 203h
+
+ = 0210				T0_8253  equ 210h
+ = 0213				CTR_8253 equ 213h
+
+ 0000				data segment
+ 0000 22 FF 52 76 23 72		ZK  db 22h,0FFh,052h,076h, 023h,072h,052h,08Ah
+       52 8A
+ 0008  00 00 7E 42 81 81	    db 00H,00H,07EH,042H,081H,081H,081H,0FFH
+       81 FF
+ 0010  22 22 FF 26 F2 63	    db 022H,022H,0FFH,026H,0F2H,063H,062H,092H
+       62 92
+ 0018  08 28 28 7F 1C 2A	    db 08H,028H,28H,7FH,1CH,2AH,49H,08H
+       49 08
+ 0020 0000			cnt dw 0  ;0 8 16 24 0
+ 0022				data ends
+
+ 0000				code segment
+					assume cs:code,ds:data
+ 0000				start:
+ 0000  B8 ---- R			mov ax,data
+led_matrix.asm(31): warning A4012: line number information for segment without class 'CODE' : code
+ 0003  8E D8				mov ds,ax
+ 0005  E8 001C				call init8255
+ 0008  BB 0000 R			mov bx, offset ZK
+ 000B  C7 06 0020 R 0000		mov cnt, 0
+ 0011  E8 0017				call init8253
+ 0014				again:
+ 0014  E8 0025				call displayWord
+ 0017  E8 0055				call incCnt
+ 001A  BB 0000 R			mov bx, offset zk
+ 001D  03 1E 0020 R			add bx, cnt
+ 0021  EB F1				jmp again
+ 0023  F4				hlt
+
+ 0024				init8255 proc
+ 0024  BA 0203				mov dx,kz_8255
+ 0027  B0 81				mov al,10000001b
+ 0029  EE				out dx,al
+ 002A  C3				ret
+ 002B				init8255 endp
+
+ 002B				init8253 proc
+ 002B  BA 0213				mov dx, CTR_8253
+ 002E  B0 36				mov al, 00110110b
+ 0030  EE				out dx, al
+ 0031  BA 0210				mov dx, T0_8253
+ 0034  B8 00B4				mov ax, 180
+ 0037  EE				out dx, al
+ 0038  8A C4				mov al, ah
+ 003A  EE				out dx, al
+ 003B  C3				ret
+ 003C				init8253 endp
+
+ 003C				displayWord proc
+ 003C				next_high:
+ 003C  E8 0014				call flashWord
+ 003F  BA 0202				mov dx, PC_8255
+ 0042  EC				in al, dx
+ 0043  A8 01				test al, 1
+ 0045  75 F5				jnz next_high
+
+ 0047				next_low:
+ 0047  E8 0009				call flashWord
+ 004A  BA 0202				mov dx, PC_8255
+ 004D  EC				in al, dx
+ 004E  A8 01				test al, 1
+ 0050  74 F5				jz next_low
+
+ 0052  C3				ret
+ 0053				displayWord endp
+
+ 0053				flashWord proc
+ 0053  53				push bx
+ 0054  B9 0008				mov cx, 8
+ 0057  B4 FE				mov ah, 0feh
+ 0059				againF:
+ 0059  BA 0200				mov dx, PA_8255
+ 005C  8A C4				mov al, ah
+ 005E  EE				out dx, al
+ 005F  8A 07				mov al, [bx]
+ 0061  BA 0201				mov dx, PB_8255
+ 0064  EE				out dx, al
+ 0065  B0 00				mov al, 00h
+ 0067  EE				out dx, al
+ 0068  43				inc bx
+ 0069  D0 C4				rol ah, 1 ; 循环左移一位
+ 006B  E2 EC				loop againF
+ 006D  5B				pop bx
+ 006E  C3				ret
+ 006F				flashWord endp
+
+ 006F				incCnt proc
+ 006F  83 06 0020 R 08			add cnt, 8
+ 0074  83 3E 0020 R 18			cmp cnt, 24
+ 0079  7E 06				jle next_cnt
+ 007B  C7 06 0020 R 0000		mov cnt, 0
+ 0081				next_cnt:
+ 0081  C3				ret
+ 0082				incCnt endp
+
+ 0082				code ends
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    11/16/23 15:15:09
+led_matrix.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
+code . . . . . . . . . . . . . .	16 Bit	 0082	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 0022	  Para	  Private 
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+displayWord  . . . . . . . . . .	P Near	 003C	  code	Length= 0017 Private
+flashWord  . . . . . . . . . . .	P Near	 0053	  code	Length= 001C Private
+incCnt . . . . . . . . . . . . .	P Near	 006F	  code	Length= 0013 Private
+init8253 . . . . . . . . . . . .	P Near	 002B	  code	Length= 0011 Private
+init8255 . . . . . . . . . . . .	P Near	 0024	  code	Length= 0007 Private
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0000h	 
+@Model . . . . . . . . . . . . .	Number	 0002h	 
+@code  . . . . . . . . . . . . .	Text   	 _TEXT
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+CTR_8253 . . . . . . . . . . . .	Number	 0213h	 
+KZ_8255  . . . . . . . . . . . .	Number	 0203h	 
+PA_8255  . . . . . . . . . . . .	Number	 0200h	 
+PB_8255  . . . . . . . . . . . .	Number	 0201h	 
+PC_8255  . . . . . . . . . . . .	Number	 0202h	 
+T0_8253  . . . . . . . . . . . .	Number	 0210h	 
+ZK . . . . . . . . . . . . . . .	Byte	 0000	  data	
+againF . . . . . . . . . . . . .	L Near	 0059	  code	
+again  . . . . . . . . . . . . .	L Near	 0014	  code	
+cnt  . . . . . . . . . . . . . .	Word	 0020	  data	
+next_cnt . . . . . . . . . . . .	L Near	 0081	  code	
+next_high  . . . . . . . . . . .	L Near	 003C	  code	
+next_low . . . . . . . . . . . .	L Near	 0047	  code	
+start  . . . . . . . . . . . . .	L Near	 0000	  code	
+
+	   1 Warnings
+	   0 Errors

@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 6.11		    11/12/23 16:50:59
+Microsoft (R) Macro Assembler Version 6.11		    11/16/23 14:28:22
 parallel.asm						     Page 1 - 1
 
 
@@ -9,41 +9,48 @@ parallel.asm						     Page 1 - 1
 
 				.model small 
 				.486
+ = 0200				PA_8255   equ  200h
+ = 0201				PB_8255   equ  201h
+ = 0202				PC_8255   equ  202h
+ = 0203				CTR_8255  equ  203h
+
+ = 0210				T0_8253   equ  210h
+ = 0211				T1_8253   equ  211h
+ = 0212				T2_8253   equ  212h
+ = 0213				CTR_8253  equ  213h
+
  = 0230				A0_M8259  equ  230h
  = 0231				A1_M8259  equ  231h
- = 0240				A0_S8259  equ  240h  
- = 0241				A1_S8259  equ  241h 
- = 0200				PA_8255   equ   200h
- = 0201				PB_8255    equ   201h
- = 0202				PC_8255   equ   202h
- = 0203				CTR_8255  equ   203h
- = 0210				T0_8253 equ 210h
- = 0211				T1_8253 equ 211h
- = 0212				T2_8253 equ 212h
- = 0213				CTR_8253 equ 213h
+ = 0240				A0_S8259  equ  240h
+ = 0241				A1_S8259  equ  241h
 
- 0000				DATA SEGMENT
+ = 0260				IN0_0809  equ  260h
+ = 0270				ADDR_0832 equ  270h 
 
- 0000 3F 06 5B 4F 66 6D		LEDCODE DB 3FH,06H,5BH,4FH,66H,6DH,7DH
-       7D
- 0007  07 7F 67					DB 07H,7FH,67H 
- 000A 0F			cnt15 db 15
- 000B 00			cnt60 db 0
- 000C 00			counter db 0
- 000D 00			d0      db 0
- 000E 00			d1      db 0
- 000F 00			d0_15 db 0
- 0010 00			d1_15 db 0
- 0011 00			d0_60 db 0
- 0012 00			d1_60 db 0
- 0013 00			lighter db 0
- 0014				DATA ENDS
+
+
+
+ 0000				data  segment
+
+ 0000 3F 06 5B 4F 66		LEDCODE db   3fh,06h,5bh,4fh,66h
+ 0005  6D 7D 07 7F 6F				db   6dh,7dh,07h,7fh,6fh
+ 000A 0F			cnt15   db   15
+ 000B 00			cnt60   db   0
+ 000C 00			counter db   0
+ 000D 00			d0      db   0
+ 000E 00			d1      db   0
+ 000F 00			d0_15   db   0
+ 0010 00			d1_15   db   0
+ 0011 00			d0_60   db   0
+ 0012 00			d1_60   db   0
+ 0013 00			lighter db   0
+ 0014				data ends
 
  0000				code segment
 				       assume cs:code,ds:data
  0000				start: 	
  0000  B8 ---- R		       mov ax,data
-parallel.asm(40): warning A4012: line number information for segment without class 'CODE' : code
+parallel.asm(48): warning A4012: line number information for segment without class 'CODE' : code
  0003  8E D8			       mov ds,ax
 				       
  0005  E8 001D			       call init8255
@@ -431,8 +438,8 @@ parallel.asm(40): warning A4012: line number information for segment without cla
 
 
  022C				code ends
-				end   start
-Microsoft (R) Macro Assembler Version 6.11		    11/12/23 16:50:59
+				end start
+Microsoft (R) Macro Assembler Version 6.11		    11/16/23 14:28:22
 parallel.asm						     Symbols 2 - 1
 
 
@@ -442,11 +449,11 @@ Segments and Groups:
 
                 N a m e                 Size     Length   Align   Combine Class
 
-DATA . . . . . . . . . . . . . .	16 Bit	 0014	  Para	  Private 
 DGROUP . . . . . . . . . . . . .	GROUP
 _DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
 _TEXT  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'CODE'	
 code . . . . . . . . . . . . . .	16 Bit	 022C	  Para	  Private 
+data . . . . . . . . . . . . . .	16 Bit	 0014	  Para	  Private 
 
 
 Procedures,  parameters and locals:
@@ -490,9 +497,11 @@ A0_M8259 . . . . . . . . . . . .	Number	 0230h
 A0_S8259 . . . . . . . . . . . .	Number	 0240h	 
 A1_M8259 . . . . . . . . . . . .	Number	 0231h	 
 A1_S8259 . . . . . . . . . . . .	Number	 0241h	 
+ADDR_0832  . . . . . . . . . . .	Number	 0270h	 
 CTR_8253 . . . . . . . . . . . .	Number	 0213h	 
 CTR_8255 . . . . . . . . . . . .	Number	 0203h	 
-LEDCODE  . . . . . . . . . . . .	Byte	 0000	  DATA	
+IN0_0809 . . . . . . . . . . . .	Number	 0260h	 
+LEDCODE  . . . . . . . . . . . .	Byte	 0000	  data	
 PA_8255  . . . . . . . . . . . .	Number	 0200h	 
 PB_8255  . . . . . . . . . . . .	Number	 0201h	 
 PC_8255  . . . . . . . . . . . .	Number	 0202h	 
@@ -500,17 +509,17 @@ T0_8253  . . . . . . . . . . . .	Number	 0210h
 T1_8253  . . . . . . . . . . . .	Number	 0211h	 
 T2_8253  . . . . . . . . . . . .	Number	 0212h	 
 again  . . . . . . . . . . . . .	L Near	 0019	  code	
-cnt15  . . . . . . . . . . . . .	Byte	 000A	  DATA	
-cnt60  . . . . . . . . . . . . .	Byte	 000B	  DATA	
-counter  . . . . . . . . . . . .	Byte	 000C	  DATA	
-d0_15  . . . . . . . . . . . . .	Byte	 000F	  DATA	
-d0_60  . . . . . . . . . . . . .	Byte	 0011	  DATA	
-d0 . . . . . . . . . . . . . . .	Byte	 000D	  DATA	
-d1_15  . . . . . . . . . . . . .	Byte	 0010	  DATA	
-d1_60  . . . . . . . . . . . . .	Byte	 0012	  DATA	
-d1 . . . . . . . . . . . . . . .	Byte	 000E	  DATA	
+cnt15  . . . . . . . . . . . . .	Byte	 000A	  data	
+cnt60  . . . . . . . . . . . . .	Byte	 000B	  data	
+counter  . . . . . . . . . . . .	Byte	 000C	  data	
+d0_15  . . . . . . . . . . . . .	Byte	 000F	  data	
+d0_60  . . . . . . . . . . . . .	Byte	 0011	  data	
+d0 . . . . . . . . . . . . . . .	Byte	 000D	  data	
+d1_15  . . . . . . . . . . . . .	Byte	 0010	  data	
+d1_60  . . . . . . . . . . . . .	Byte	 0012	  data	
+d1 . . . . . . . . . . . . . . .	Byte	 000E	  data	
 final15  . . . . . . . . . . . .	L Near	 017E	  code	
-lighter  . . . . . . . . . . . .	Byte	 0013	  DATA	
+lighter  . . . . . . . . . . . .	Byte	 0013	  data	
 next_add . . . . . . . . . . . .	L Near	 012C	  code	
 reset15  . . . . . . . . . . . .	L Near	 0179	  code	
 show . . . . . . . . . . . . . .	L Near	 0131	  code	

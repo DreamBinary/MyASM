@@ -1,33 +1,31 @@
-;**************************************
-;* coded by CXQ
-; 试在实验箱上设计一个系统，该系统每 100 毫秒采样试验箱中一个直流电源
-; 的电压（0~5v），并将所得数字量以十六进制方式显示在 8 段数码上。
-;**************************************
+;4、试在实验箱上设计一个系统，该系统每 100 毫秒采样试验箱中一个直流电源
+;的电压（0~5v），并将所得数字量以十六进制方式显示在 8 段数码上。
+;cs0-0809.cs
+;cs1-8255.cs
+;cs6-8253.cs
+;8253.out0-8255.pc1
+;8253.clk0-100hz
+;8253.gate0-k1(1)
+;8255.pb6~pb0-gfedcba
+;8255.pc0-0809.eoc
+;8255.pc6--bit1
+;8255.pc7--bit2
+;0809.clk-100khz
+;vout1-0809.int0
 
 .model small 
 .486
-PA_8255   equ  200h
-PB_8255   equ  201h
-PC_8255   equ  202h
-CTR_8255  equ  203h
-
-T0_8253   equ  210h
-T1_8253   equ  211h
-T2_8253   equ  212h
-CTR_8253  equ  213h
-
-A0_M8259  equ  230h
-A1_M8259  equ  231h
-A0_S8259  equ  240h
-A1_S8259  equ  241h
-
-IN0_0809  equ  260h
-ADDR_0832 equ  270h 
-
+in0_0809 equ 200h
+pa_8255 equ 210h
+pb_8255 equ 211h
+pc_8255 equ 212h
+ctr_8255 equ 213h
+T0_8253 equ 260h  
+KZ_8253 equ 263h
 
 data segment
-	LEDCODE db 3fh,06h,5bh,4fh,66h,6dh,7dh,07h,7fh,67h
-		    db 77h,7ch,39h,5eh,79h,71h
+	led db 3fh,06h,5bh,4fh,66h,6dh,7dh,07h,7fh,67h
+		db 77h,7ch,39h,5eh,79h,71h
 	n db ?
 	high_num db ?
 	low_num db ?
@@ -56,7 +54,7 @@ init8255 proc
 init8255 endp
 
 start0809 proc
-	mov dx,200h
+	mov dx,in0_0809
 	mov al,2
 	out dx,al
 	ret
@@ -91,7 +89,7 @@ again300ms:
 delay300ms endp
 
 setTimer proc
-	mov dx,CTR_8253
+	mov dx,kz_8253
 	mov al,00110000B
 	out dx,al
 	mov dx,T0_8253
@@ -119,7 +117,7 @@ writehigh proc
 	mov dx,pb_8255
 	mov bx,0
 	mov bl,high_num
-	mov al,LEDCODE[bx]
+	mov al,led[bx]
 	out dx,al
 	mov dx,pc_8255
 	mov al,10000000b
